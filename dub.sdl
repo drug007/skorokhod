@@ -1,0 +1,15 @@
+name "skorokhod"
+description "Experimental layout engine"
+authors "drug007"
+copyright "Copyright © 2021, drug007"
+license "BSL"
+dependency "silly" version="~>1.1.1"
+dependency "taggedalgebraic" version="~>0.11.22"
+
+configuration "library" {
+	targetName "library" // duplicate name to avoid annoying code-d warning
+}
+
+configuration "unittest" {
+	targetName "unittest" // duplicate name to avoid annoying code-d warning
+}
