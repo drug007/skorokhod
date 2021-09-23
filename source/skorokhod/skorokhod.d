@@ -43,10 +43,10 @@ template Skorokhod(Types, Desc)
 			path.popBack;
 		}
 
-		auto reference()
+		auto current()
 		{
 			enforce(!empty);
-			// return stack[$-1].reference.children(idx);
+			assert(isParent(stack[$-1].reference));
 			stack[$-1].reference.apply!((v) {
 				import std.meta : staticIndexOf;
 				alias Type = typeof(v);
@@ -138,21 +138,30 @@ template Skorokhod(Types, Desc)
 	/// allows access to aggregate type members
 	/// by index. Not all members are available, it
 	/// depends on describing type.
-	auto mbi(A)(ref A value, size_t idx)
+	auto mbi(A, D = Desc)(ref A value, size_t idx)
 	{
-		switch(idx)
+		import std.traits : isAggregateType, isArray;
+
+		static if (isAggregateType!A)
 		{
-			static foreach(k; 0..Length)
-				case k:
-				{
-					// get the name from description
-					enum name = __traits(identifier, Desc.tupleof[k]);
-					// return the field of the given name
-					return Reference(&__traits(getMember, value, name));
-				}
-			default:
-				assert(0);
+			switch(idx)
+			{
+				static foreach(k; 0..D.tupleof.length)
+					case k:
+					{
+						// get the name from description
+						enum name = __traits(identifier, D.tupleof[k]);
+						// return the field of the given name
+						return Reference(&__traits(getMember, value, name));
+					}
+				default:
+					assert(0);
+			}
 		}
+		else static if (isArray!A)
+			return Reference(&value[idx]);
+		else
+			static assert(0);
 	}
 
 	template Tbi(T, size_t idx)
@@ -263,7 +272,7 @@ mixin template skorokhodHelper(T, Desc = T)
 	// that's a workaround that TaggedAlgebraic accepts only aggregate types or enum
 	template Types(T)
 	{
-		import std.traits : Fields, isAggregateType, isArray;
+		import std.traits : Fields, isAggregateType, isArray, isSomeString;
 		import std.meta : AliasSeq, staticMap, NoDuplicates;
 		import std.conv : text;
 		import std.range : ElementType;
@@ -285,6 +294,10 @@ mixin template skorokhodHelper(T, Desc = T)
 				static if (isAggregateType!ft)
 				{
 					A = AliasSeq!(A, TypeList!ft);
+				}
+				else static if (isSomeString!ft)
+				{
+					// do nothing
 				}
 				else static if (isArray!ft)
 				{
