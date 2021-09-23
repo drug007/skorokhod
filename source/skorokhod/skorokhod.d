@@ -7,6 +7,85 @@ template Skorokhod(Types, Desc)
 	enum Length = Desc.tupleof.length;	
 	alias Reference = TaggedAlgebraic!Types;
 
+	private struct Record
+	{
+		size_t idx, total;
+		Reference reference;
+	}
+
+	private struct StateStack
+	{
+		import std.exception : enforce;
+		import auxil.treepath : TreePath;
+
+		@safe:
+
+		Record[] stack;
+		TreePath path;
+
+		this(size_t total, Reference reference)
+		{
+			push(total, reference);
+		}
+
+		void push(size_t total, Reference reference)
+		{
+			stack ~= Record(0, total, reference);
+			path.put(cast(int) idx);
+		}
+
+		void pop()
+		{
+			enforce(!empty);
+			stack = stack[0..$-1];
+			path.popBack;
+		}
+
+		auto reference()
+		{
+			enforce(!empty);
+			// return stack[$-1].reference.children(idx);
+			stack[$-1].reference.apply!((v){
+				import std.meta : staticIndexOf;
+				alias Type = typeof(v);
+				static if (staticIndexOf!(CollapsableTypes!Types, Type) > -1)
+					return mbi!Type(stack[$-1].reference.get!Type, _idx);
+				else
+					return stack[$-1].reference;
+			});
+		}
+
+		auto idx() const
+		{
+			enforce(!empty);
+			return stack[$-1].idx;
+		}
+
+		auto total() const
+		{
+			enforce(!empty);
+			return stack[$-1].total;
+		}
+
+		bool empty() const
+		{
+			return stack.length == 0;
+		}
+
+		bool inProgress() const
+		{
+			enforce(!empty);
+			return stack[$-1].idx < stack[$-1].total;
+		}
+
+		void nextNode()
+		{
+			enforce(inProgress);
+			stack[$-1].idx++;
+			path.back = cast(int) idx;
+		}
+	}
+
 	// allows to iterate over T members (or their subset
 	// defined by Desc description)
 	// only compile-time filtering is available
@@ -18,6 +97,7 @@ template Skorokhod(Types, Desc)
 		private T* _value;
 		private Reference _current;
 		private size_t _i;
+		private StateStack _stack;
 
 		this(ref T value) @trusted
 		{
@@ -92,6 +172,32 @@ template Skorokhod(Types, Desc)
 		}
 	}
 
+	private template IsCollapsable(Pointer)
+	{
+		import std.traits : PointerTarget;
+		import skorokhod.model;
+
+		alias Pointee = PointerTarget!Pointer;
+
+		static if (Model!Pointee.Collapsable)
+			enum IsCollapsable = true;
+		else
+			enum IsCollapsable = false;
+	}
+
+	template CollapsableTypes(U)
+	{
+		import std.meta : AliasSeq;
+		import std.traits : Fields;
+
+		alias S = AliasSeq!();
+		static foreach(FT; Fields!U)
+			static if (IsCollapsable!FT)
+				S = AliasSeq!(S, FT);
+
+		alias CollapsableTypes = S;
+	}
+
 	template parentsTypes(T)
 	{
 		import std.meta : AliasSeq;
@@ -103,7 +209,7 @@ template Skorokhod(Types, Desc)
 			// Pointer = Tbi!(T, i)
 			// Pointee = PointerTarget!Pointer
 			// Model   = Model!Pointee
-			static if (Model!(PointerTarget!(Tbi!(T, i))).Collapsable)
+			static if (IsCollapsable!(Tbi!(T, i)))
 				S = AliasSeq!(S, PointerTarget!(Tbi!(T, i)));
 
 		alias parentsTypes = S;

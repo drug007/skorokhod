@@ -108,7 +108,7 @@ version(none) unittest
 	assert(r.equal(etalon));
 }
 
-@("Three")
+@("Three0")
 unittest
 {
 	mixin skorokhodHelper!(Three);
