@@ -175,3 +175,33 @@ unittest
 
 	assert(r.equal(etalon));
 }
+
+@("Two, using Model as description")
+unittest
+{
+	import skorokhod.model;
+
+	mixin skorokhodHelper!(Three, Model!Two);
+
+	auto two = Two(1., One(), "str", 3.);
+	auto r = rangeOver(two);
+	version(none) 
+	{
+		auto r1 = r;
+		while(!r1.empty)
+		{
+			writeln(*r1.front);
+			r1.popFront;
+		}
+		writeln("===");
+	}
+
+	auto etalon = [
+		Reference(&two.f), 
+		Reference(&two.one), 
+		Reference(&two.str),
+		Reference(&two.d),
+	];
+
+	assert(r.equal(etalon));
+}
