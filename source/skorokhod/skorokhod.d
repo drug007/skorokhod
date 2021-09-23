@@ -45,7 +45,7 @@ template Skorokhod(Types, Desc)
 		{
 			enforce(!empty);
 			// return stack[$-1].reference.children(idx);
-			stack[$-1].reference.apply!((v){
+			stack[$-1].reference.apply!((v) {
 				import std.meta : staticIndexOf;
 				alias Type = typeof(v);
 				static if (staticIndexOf!(CollapsableTypes!Types, Type) > -1)
@@ -172,7 +172,15 @@ template Skorokhod(Types, Desc)
 		}
 	}
 
-	private template IsCollapsable(Pointer)
+	auto isParent(Reference reference)
+	{
+		reference.apply!((v) {
+			alias VT = typeof(v);
+			return IsParent!VT;
+		});
+	}
+
+	private template IsParent(Pointer)
 	{
 		import std.traits : PointerTarget;
 		import skorokhod.model;
@@ -180,9 +188,9 @@ template Skorokhod(Types, Desc)
 		alias Pointee = PointerTarget!Pointer;
 
 		static if (Model!Pointee.Collapsable)
-			enum IsCollapsable = true;
+			enum IsParent = true;
 		else
-			enum IsCollapsable = false;
+			enum IsParent = false;
 	}
 
 	template CollapsableTypes(U)
@@ -192,7 +200,7 @@ template Skorokhod(Types, Desc)
 
 		alias S = AliasSeq!();
 		static foreach(FT; Fields!U)
-			static if (IsCollapsable!FT)
+			static if (IsParent!FT)
 				S = AliasSeq!(S, FT);
 
 		alias CollapsableTypes = S;
@@ -209,7 +217,7 @@ template Skorokhod(Types, Desc)
 			// Pointer = Tbi!(T, i)
 			// Pointee = PointerTarget!Pointer
 			// Model   = Model!Pointee
-			static if (IsCollapsable!(Tbi!(T, i)))
+			static if (IsParent!(Tbi!(T, i)))
 				S = AliasSeq!(S, PointerTarget!(Tbi!(T, i)));
 
 		alias parentsTypes = S;
