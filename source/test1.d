@@ -205,3 +205,14 @@ unittest
 
 	assert(r.equal(etalon));
 }
+
+@("parents")
+unittest
+{
+	mixin skorokhodHelper!(Three);
+
+	static assert(Skor.parentsNumbers!Three[].equal([1, 2, 3]));
+
+	import std.meta : AliasSeq;
+	static assert(is(Skor.parentsTypes!Three == AliasSeq!(ubyte[2], One[3], Two[])));
+}

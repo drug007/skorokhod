@@ -91,6 +91,51 @@ template Skorokhod(Types, Desc)
 				assert(0);
 		}
 	}
+
+	template parentsTypes(T)
+	{
+		import std.meta : AliasSeq;
+		import std.traits : PointerTarget;
+		import skorokhod.model;
+		
+		alias S = AliasSeq!();
+		static foreach(i; 0..Length)
+			// Pointer = Tbi!(T, i)
+			// Pointee = PointerTarget!Pointer
+			// Model   = Model!Pointee
+			static if (Model!(PointerTarget!(Tbi!(T, i))).Collapsable)
+				S = AliasSeq!(S, PointerTarget!(Tbi!(T, i)));
+
+		alias parentsTypes = S;
+	}
+
+	/// returns static array containing order numbers of
+	/// T members having children
+	/// the numbers are ordered in ascending order
+	template parentsNumbers(T)
+	{
+		import std.meta : AliasSeq;
+		import std.traits : PointerTarget;
+		import skorokhod.model;
+
+		alias S = AliasSeq!();
+		static foreach(i; 0..Length)
+			// Pointer = Tbi!(T, i)
+			// Pointee = PointerTarget!Pointer
+			// Model   = Model!Pointee
+			static if (Model!(PointerTarget!(Tbi!(T, i))).Collapsable)
+				S = AliasSeq!(S, i);
+
+		auto initialize()
+		{
+			ubyte[S.length] par;
+			static foreach(i; 0..S.length)
+				par[i] = S[i];
+			return par;
+		}
+
+		enum parentsNumbers = initialize();
+	}
 }
 
 mixin template skorokhodHelper(T, Desc = T)
