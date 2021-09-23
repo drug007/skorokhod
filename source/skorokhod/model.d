@@ -2,6 +2,8 @@ module skorokhod.model;
 
 import auxil.traits;
 
+alias SizeType = int;
+
 template Model(alias A)
 {
 	static if (dataHasStaticArrayModel!(TypeOf!A))
@@ -12,6 +14,11 @@ template Model(alias A)
 		alias Model = AggregateModel!A;
 	else
 		alias Model = ScalarModel!A;
+}
+
+auto model(T)(ref const(T) value)
+{
+	return Model!T(value);
 }
 
 private struct StaticArrayModel(alias A)
@@ -26,15 +33,11 @@ private struct StaticArrayModel(alias A)
 	Model!ElementType[Data.length] model;
 	alias model this;
 
-	this()(const(Data) data) if (Data.sizeof <= (void*).sizeof)
-	{
-		foreach(i; 0..data.length)
-			model[i] = Model!ElementType(data[i]);
-	}
+	@disable this();
 
-	this()(ref const(Data) data) if (Data.sizeof > (void*).sizeof)
+	this(ref const(Data) data)
 	{
-		foreach(i; 0..data.length)
+		static foreach(i; 0..data.length)
 			model[i] = Model!ElementType(data[i]);
 	}
 }
@@ -54,12 +57,9 @@ private struct RaRModel(alias A)
 	Vector!(Model!ElementType, Mallocator) model;
 	alias model this;
 
-	this()(const(Data) data) if (Data.sizeof <= (void*).sizeof)
-	{
-		update(data);
-	}
+	@disable this();
 
-	this()(ref const(Data) data) if (Data.sizeof > (void*).sizeof)
+	this(ref const(Data) data)
 	{
 		update(data);
 	}
@@ -71,7 +71,7 @@ private struct RaRModel(alias A)
 			e = Model!ElementType(data[i]);
 	}
 
-	void update(T)(ref TaggedAlgebraic!T v)
+	version(none) void update(T)(ref TaggedAlgebraic!T v)
 	{
 		update(taget!Data(v));
 	}
@@ -93,7 +93,9 @@ template AggregateModel(alias A)
 		static foreach(member; DrawableMembers!Data)
 			mixin("Model!(Data.%1$s) %1$s;".format(member));
 
-		this()(auto ref const(Data) data)
+		@disable this();
+
+		this(ref const(Data) data)
 		{
 			foreach(member; DrawableMembers!Data)
 			{
@@ -126,7 +128,9 @@ struct ScalarModel(alias A)
 	alias Data = TypeOf!A;
 	static assert(isProcessible!Data);
 
-	this()(auto ref const(Data) data)
+	@disable this();
+
+	this(ref const(Data) data)
 	{
 	}
 }

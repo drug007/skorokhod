@@ -72,6 +72,20 @@ unittest
 	assert( mbi(three, 3) == &three.two);
 }
 
+@("Model")
+unittest
+{
+	import skorokhod.model;
+
+	One one;
+	Two two;
+	Three three;
+
+	static assert(is(typeof(model(one))));
+	static assert(is(typeof(model(two))));
+	static assert(is(typeof(model(three))));
+}
+
 @("One")
 version(none) unittest
 {
