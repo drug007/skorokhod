@@ -4,6 +4,8 @@ import taggedalgebraic;
 
 template Skorokhod(Types, Desc)
 {
+	import skorokhod.model;
+
 	enum Length = Desc.tupleof.length;	
 	alias Reference = TaggedAlgebraic!Types;
 
@@ -172,36 +174,41 @@ template Skorokhod(Types, Desc)
 		}
 	}
 
+	auto childrenCount(Reference reference)
+	{
+		return reference.apply!((ref v) {
+			alias V = typeof(*v);
+			static if (IsParent!V)
+				return 1;
+			else
+				return 0;
+		});
+	}
+
 	auto isParent(Reference reference)
 	{
-		return reference.apply!((v) {
-			alias VT = typeof(v);
+		return reference.apply!((ref v) {
+			alias VT = typeof(*v);
 			return IsParent!VT;
 		});
 	}
 
-	private template IsParent(U)
+	string stringOf(Reference reference)
 	{
-		import std.traits : PointerTarget;
-		import skorokhod.model;
-
-		static if (Model!U.Collapsable)
-			enum IsParent = true;
-		else
-			enum IsParent = false;
+		return reference.apply!((ref v) {
+			alias VT = typeof(v);
+			return VT.stringof;
+		});
 	}
+
+	private enum IsParent(U) = Model!U.Collapsable;
 
 	template ParentTypes(U)
 	{
-		import std.meta : AliasSeq;
+		import std.meta : Filter;
 		import std.traits : Fields;
 
-		alias S = AliasSeq!();
-		static foreach(FT; Fields!U)
-			static if (IsParent!FT)
-				S = AliasSeq!(S, FT);
-
-		alias ParentTypes = S;
+		alias ParentTypes = Filter!(IsParent, Fields!U);
 	}
 
 	/// returns static array containing order numbers of
@@ -211,7 +218,6 @@ template Skorokhod(Types, Desc)
 	{
 		import std.meta : AliasSeq;
 		import std.traits : PointerTarget;
-		import skorokhod.model;
 
 		alias S = AliasSeq!();
 		static foreach(i; 0..Length)
@@ -241,8 +247,10 @@ mixin template skorokhodHelper(T, Desc = T)
 	alias mbi       = Skor.mbi;
 	alias tbi       = Skor.tbi;
 	alias isParent  = Skor.isParent;
+	alias stringOf  = Skor.stringOf;
 	alias ParentNumbers = Skor.ParentNumbers;
 	alias ParentTypes   = Skor.ParentTypes;
+	alias childrenCount = Skor.childrenCount;
 
 	// Generates a structure, containing all needed types to pass to TaggedAlgebraic
 	// that's a workaround that TaggedAlgebraic accepts only aggregate types or enum

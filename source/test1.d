@@ -149,6 +149,19 @@ unittest
 	assert( isParent(r.front));
 }
 
+@("childrenCount")
+unittest
+{
+	mixin skorokhodHelper!(Three);
+
+	Three three;
+	auto r = rangeOver(three);
+	assert(childrenCount(r.front) == 0); r.popFront;
+	assert(childrenCount(r.front) == 1); r.popFront;
+	assert(childrenCount(r.front) == 1); r.popFront;
+	assert(childrenCount(r.front) == 1);
+}
+
 // In this test one field of target data structure is skipped
 // using describing data structure
 @("Two, skipping a field")
