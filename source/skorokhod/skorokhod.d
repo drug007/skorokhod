@@ -174,7 +174,7 @@ template Skorokhod(Types, Desc)
 
 	auto isParent(Reference reference)
 	{
-		reference.apply!((v) {
+		return reference.apply!((v) {
 			alias VT = typeof(v);
 			return IsParent!VT;
 		});
@@ -259,6 +259,9 @@ mixin template skorokhodHelper(T, Desc = T)
 	alias Reference = Skor.Reference;
 	alias mbi       = Skor.mbi;
 	alias tbi       = Skor.tbi;
+	alias isParent  = Skor.isParent;
+	alias parentsNumbers = Skor.parentsNumbers;
+	alias parentsTypes   = Skor.parentsTypes;
 
 	// Generates a structure, containing all needed types to pass to TaggedAlgebraic
 	// that's a workaround that TaggedAlgebraic accepts only aggregate types or enum

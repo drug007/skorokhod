@@ -136,6 +136,19 @@ unittest
 	assert(r.equal(etalon));
 }
 
+@("isParent")
+unittest
+{
+	mixin skorokhodHelper!(Three);
+
+	Three three;
+	auto r = rangeOver(three);
+	assert(!isParent(r.front)); r.popFront;
+	assert( isParent(r.front)); r.popFront;
+	assert( isParent(r.front)); r.popFront;
+	assert( isParent(r.front));
+}
+
 // In this test one field of target data structure is skipped
 // using describing data structure
 @("Two, skipping a field")
@@ -211,8 +224,8 @@ unittest
 {
 	mixin skorokhodHelper!(Three);
 
-	static assert(Skor.parentsNumbers!Three[].equal([1, 2, 3]));
+	static assert(parentsNumbers!Three[].equal([1, 2, 3]));
 
 	import std.meta : AliasSeq;
-	static assert(is(Skor.parentsTypes!Three == AliasSeq!(ubyte[2], One[3], Two[])));
+	static assert(is(parentsTypes!Three == AliasSeq!(ubyte[2], One[3], Two[])));
 }
