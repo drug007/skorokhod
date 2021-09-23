@@ -224,8 +224,8 @@ unittest
 {
 	mixin skorokhodHelper!(Three);
 
-	static assert(parentsNumbers!Three[].equal([1, 2, 3]));
+	static assert(ParentNumbers!Three[].equal([1, 2, 3]));
 
 	import std.meta : AliasSeq;
-	static assert(is(parentsTypes!Three == AliasSeq!(ubyte[2], One[3], Two[])));
+	static assert(is(ParentTypes!Three == AliasSeq!(ubyte[2], One[3], Two[])));
 }

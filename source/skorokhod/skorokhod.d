@@ -180,14 +180,12 @@ template Skorokhod(Types, Desc)
 		});
 	}
 
-	private template IsParent(Pointer)
+	private template IsParent(U)
 	{
 		import std.traits : PointerTarget;
 		import skorokhod.model;
 
-		alias Pointee = PointerTarget!Pointer;
-
-		static if (Model!Pointee.Collapsable)
+		static if (Model!U.Collapsable)
 			enum IsParent = true;
 		else
 			enum IsParent = false;
@@ -206,27 +204,10 @@ template Skorokhod(Types, Desc)
 		alias ParentTypes = S;
 	}
 
-	template parentsTypes(T)
-	{
-		import std.meta : AliasSeq;
-		import std.traits : PointerTarget;
-		import skorokhod.model;
-		
-		alias S = AliasSeq!();
-		static foreach(i; 0..Length)
-			// Pointer = Tbi!(T, i)
-			// Pointee = PointerTarget!Pointer
-			// Model   = Model!Pointee
-			static if (IsParent!(Tbi!(T, i)))
-				S = AliasSeq!(S, PointerTarget!(Tbi!(T, i)));
-
-		alias parentsTypes = S;
-	}
-
 	/// returns static array containing order numbers of
 	/// T members having children
 	/// the numbers are ordered in ascending order
-	template parentsNumbers(T)
+	template ParentNumbers(T)
 	{
 		import std.meta : AliasSeq;
 		import std.traits : PointerTarget;
@@ -248,7 +229,7 @@ template Skorokhod(Types, Desc)
 			return par;
 		}
 
-		enum parentsNumbers = initialize();
+		enum ParentNumbers = initialize();
 	}
 }
 
@@ -260,8 +241,8 @@ mixin template skorokhodHelper(T, Desc = T)
 	alias mbi       = Skor.mbi;
 	alias tbi       = Skor.tbi;
 	alias isParent  = Skor.isParent;
-	alias parentsNumbers = Skor.parentsNumbers;
-	alias parentsTypes   = Skor.parentsTypes;
+	alias ParentNumbers = Skor.ParentNumbers;
+	alias ParentTypes   = Skor.ParentTypes;
 
 	// Generates a structure, containing all needed types to pass to TaggedAlgebraic
 	// that's a workaround that TaggedAlgebraic accepts only aggregate types or enum
