@@ -5,6 +5,8 @@ copyright "Copyright © 2021, drug007"
 license "BSL"
 dependency "silly" version="~>1.1.1"
 dependency "taggedalgebraic" version="~>0.11.22"
+dependency "auxil" path="../nanogui/auxil" version="*"
+versions "no_unit_threaded"
 
 configuration "library" {
 	targetName "library" // duplicate name to avoid annoying code-d warning
