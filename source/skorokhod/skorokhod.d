@@ -7,6 +7,10 @@ template Skorokhod(Types, Desc)
 	enum Length = Desc.tupleof.length;	
 	alias Reference = TaggedAlgebraic!Types;
 
+	// allows to iterate over T members (or their subset
+	// defined by Desc description)
+	// only compile-time filtering is available
+	// run-time one should be implemented by other ways
 	struct RangeOver(T)
 	{
 		@safe:
@@ -99,7 +103,6 @@ mixin template skorokhodHelper(T, Desc = T)
 
 	// Generates a structure, containing all needed types to pass to TaggedAlgebraic
 	// that's a workaround that TaggedAlgebraic accepts only aggregate types or enum
-	// mixin Types!Three;
 	template Types(T)
 	{
 		import std.traits : Fields, isAggregateType, isArray;
