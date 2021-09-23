@@ -47,14 +47,7 @@ template Skorokhod(Types, Desc)
 		{
 			enforce(!empty);
 			assert(isParent(stack[$-1].reference));
-			stack[$-1].reference.apply!((v) {
-				import std.meta : staticIndexOf;
-				alias Type = typeof(v);
-				static if (staticIndexOf!(ParentTypes!Types, Type) > -1)
-					return mbi!Type(stack[$-1].reference.get!Type, _idx);
-				else
-					return stack[$-1].reference;
-			});
+			return cbi(stack[$-1].reference, idx);
 		}
 
 		auto idx() const
@@ -118,8 +111,18 @@ template Skorokhod(Types, Desc)
 			return _current;
 		}
 
-		void popFront()
+		void popFront() @trusted
 		{
+			foreach(e; ParentNumbers!T[])
+			{
+				if (e == _i)
+				{
+					// import std;
+					// writeln(*_current);
+					// // _stack.push(, _current);
+					// // return;
+				}
+			}
 			assert(!empty);
 			_i++;
 			if (!empty)
@@ -181,6 +184,21 @@ template Skorokhod(Types, Desc)
 			default:
 				assert(0);
 		}
+	}
+
+	auto cbi(Reference reference, size_t idx)
+	{
+		import std.exception : enforce;
+		import std.traits : isArray;
+
+		enforce(isParent(reference));
+		return reference.apply!((ref v) {
+			alias V = typeof(*v);
+			static if (IsParent!V)
+				return mbi!(V, V)(*reference.get!(V*), idx);
+			else
+				return Reference();
+		});
 	}
 
 	auto childrenCount(Reference reference)
