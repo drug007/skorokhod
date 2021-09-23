@@ -109,7 +109,7 @@ version(none) unittest
 }
 
 @("Three")
-version(none) unittest
+unittest
 {
 	mixin skorokhodHelper!(Three);
 
@@ -139,7 +139,7 @@ version(none) unittest
 // In this test one field of target data structure is skipped
 // using describing data structure
 @("Two, skipping a field")
-version(none) unittest
+unittest
 {
 	/// Describing data structure
 	/// contains fields that should be

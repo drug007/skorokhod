@@ -18,7 +18,8 @@ template Skorokhod(Types, Desc)
 		this(ref T value) @trusted
 		{
 			_value = &value;
-			_current = Reference(_value);
+			version(none) _current = Reference(_value);
+			else _current = mbi(*_value, _i);
 		}
 
 		bool empty() const
