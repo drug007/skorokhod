@@ -69,6 +69,12 @@ template Skorokhod(Types, Desc)
 		}
 	}
 
+	template Tbi(T, size_t idx)
+	{
+		enum name = __traits(identifier, Desc.tupleof[idx]);
+		alias Tbi = typeof(__traits(getMember, T, name))*;
+	}
+
 	/// tbi - return string representation of a member type by index
 	auto tbi(A)(ref A value, size_t idx)
 	{
@@ -76,10 +82,7 @@ template Skorokhod(Types, Desc)
 		{
 			static foreach(k; 0..Length)
 				case k:
-				{
-					enum name = __traits(identifier, Desc.tupleof[k]);
-					return typeof(&__traits(getMember, value, name)).stringof;
-				}
+					return Tbi!(A, k).stringof;
 			default:
 				assert(0);
 		}
