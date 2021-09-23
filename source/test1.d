@@ -157,9 +157,9 @@ unittest
 	Three three;
 	auto r = rangeOver(three);
 	assert(childrenCount(r.front) == 0); r.popFront;
-	assert(childrenCount(r.front) == 1); r.popFront;
-	assert(childrenCount(r.front) == 1); r.popFront;
-	assert(childrenCount(r.front) == 1);
+	assert(childrenCount(r.front) == 2); r.popFront;
+	assert(childrenCount(r.front) == 3); r.popFront;
+	assert(childrenCount(r.front) == 0);
 }
 
 // In this test one field of target data structure is skipped

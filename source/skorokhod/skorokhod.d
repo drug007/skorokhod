@@ -176,10 +176,17 @@ template Skorokhod(Types, Desc)
 
 	auto childrenCount(Reference reference)
 	{
+		import std.traits : isArray;
+
 		return reference.apply!((ref v) {
 			alias V = typeof(*v);
 			static if (IsParent!V)
-				return 1;
+			{
+				static if (isArray!V)
+					return v.length;
+				else
+					return V.tupleof.length;
+			}
 			else
 				return 0;
 		});
