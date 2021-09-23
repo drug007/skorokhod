@@ -48,7 +48,7 @@ template Skorokhod(Types, Desc)
 			stack[$-1].reference.apply!((v) {
 				import std.meta : staticIndexOf;
 				alias Type = typeof(v);
-				static if (staticIndexOf!(CollapsableTypes!Types, Type) > -1)
+				static if (staticIndexOf!(ParentTypes!Types, Type) > -1)
 					return mbi!Type(stack[$-1].reference.get!Type, _idx);
 				else
 					return stack[$-1].reference;
@@ -193,7 +193,7 @@ template Skorokhod(Types, Desc)
 			enum IsParent = false;
 	}
 
-	template CollapsableTypes(U)
+	template ParentTypes(U)
 	{
 		import std.meta : AliasSeq;
 		import std.traits : Fields;
@@ -203,7 +203,7 @@ template Skorokhod(Types, Desc)
 			static if (IsParent!FT)
 				S = AliasSeq!(S, FT);
 
-		alias CollapsableTypes = S;
+		alias ParentTypes = S;
 	}
 
 	template parentsTypes(T)
