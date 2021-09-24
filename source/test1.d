@@ -207,7 +207,7 @@ unittest
 // In this test one field of target data structure is skipped
 // using describing data structure
 @("Two, skipping a field")
-unittest
+version(none) unittest
 {
 	/// Describing data structure
 	/// contains fields that should be
@@ -224,7 +224,7 @@ unittest
 
 	auto two = Two(1., One(), "str", 3.);
 	auto r = rangeOver(two);
-	version(none) 
+	version(all) 
 	{
 		import std;
 		r.save.map!"*a".each!writeln;
@@ -245,7 +245,7 @@ unittest
 }
 
 @("Two, using Model as description")
-unittest
+version(none) unittest
 {
 	import skorokhod.model;
 

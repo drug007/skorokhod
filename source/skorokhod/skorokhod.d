@@ -2,7 +2,7 @@ module skorokhod.skorokhod;
 
 import taggedalgebraic;
 
-template Skorokhod(Types, Desc)
+template Skorokhod(Types)
 {
 	import skorokhod.model;
 
@@ -158,7 +158,7 @@ template Skorokhod(Types, Desc)
 	/// allows access to aggregate type members
 	/// by index. Not all members are available, it
 	/// depends on describing type.
-	auto mbi(A, D = Desc)(ref A value, size_t idx)
+	auto mbi(A, D = A)(ref A value, size_t idx)
 	{
 		import std.traits : isAggregateType, isArray;
 
@@ -193,7 +193,7 @@ template Skorokhod(Types, Desc)
 		return reference.apply!((ref v) {
 			alias V = typeof(*v);
 			static if (IsParent!V)
-				return mbi!(V, V)(*reference.get!(V*), idx);
+				return mbi!V(*reference.get!(V*), idx);
 			else
 				return Reference();
 		});
@@ -244,9 +244,9 @@ template Skorokhod(Types, Desc)
 	}
 }
 
-mixin template skorokhodHelper(T, Desc = T)
+mixin template skorokhodHelper(T)
 {
-	alias Skor = Skorokhod!(Types!T, Desc);
+	alias Skor = Skorokhod!(Types!T);
 	alias rangeOver = Skor.rangeOver;
 	alias Reference = Skor.Reference;
 	alias mbi       = Skor.mbi;
