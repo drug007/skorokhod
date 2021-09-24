@@ -25,14 +25,17 @@ template Skorokhod(Types, Desc)
 		Record[] stack;
 		TreePath path;
 
+		@disable this();
+
 		this(size_t total, Reference reference)
 		{
-			push(total, reference);
+			stack ~= Record(0, total, reference);
+			path.put(0);
 		}
 
-		void push(size_t total, Reference reference)
+		void push()
 		{
-			stack ~= Record(0, total, reference);
+			stack ~= Record(0, childrenCount(current), current);
 			path.put(cast(int) idx);
 		}
 
@@ -46,7 +49,12 @@ template Skorokhod(Types, Desc)
 		auto current()
 		{
 			enforce(!empty);
+
+			if (nestingLevel == 1)
+				return stack[$-1].reference;
+
 			assert(isParent(stack[$-1].reference));
+			assert(total);
 			return cbi(stack[$-1].reference, idx);
 		}
 
@@ -73,11 +81,16 @@ template Skorokhod(Types, Desc)
 			return stack[$-1].idx < stack[$-1].total;
 		}
 
-		void nextNode()
+		void nextChild()
 		{
 			enforce(inProgress);
 			stack[$-1].idx++;
 			path.back = cast(int) idx;
+		}
+
+		size_t nestingLevel() const
+		{
+			return stack.length;
 		}
 	}
 
@@ -90,45 +103,50 @@ template Skorokhod(Types, Desc)
 		@safe:
 
 		private T* _value;
-		private Reference _current;
-		private size_t _i;
 		private StateStack _stack;
 
 		this(ref T value) @trusted
 		{
 			_value = &value;
-			version(none) _current = Reference(_value);
-			else _current = mbi(*_value, _i);
+			_stack = StateStack(1, Reference(_value));
 		}
 
 		bool empty() const
 		{
-			return _i == Length;
+			return _stack.empty;
 		}
 
 		Reference front()
 		{
-			return _current;
+			return _stack.current;
 		}
 
 		void popFront() @trusted
 		{
-			foreach(e; ParentNumbers!T[])
+			// Clear the stack from records where
+			// all children has been visited
+			scope(exit)
 			{
-				if (e == _i)
-				{
-					// import std;
-					// writeln(*_current);
-					// // _stack.push(, _current);
-					// // return;
-				}
+				while(!_stack.empty && !_stack.inProgress)
+					_stack.pop;
+			}
+
+			if (_stack.nestingLevel == 1 || (isParent(_stack.current) && _stack.total))
+			{
+				_stack.push;
+				assert(_stack.idx == 0);
+				// in grand parent record go to the next child
+				// (i.e. go to the next parent) 
+				_stack.stack[$-2].idx++;
+				return;
 			}
 			assert(!empty);
-			_i++;
-			if (!empty)
-				_current = mbi(*_value, _i);
-			else
-				_current = Reference();
+			_stack.nextChild;
+		}
+
+		auto save()
+		{
+			return this;
 		}
 	}
 
@@ -244,33 +262,6 @@ template Skorokhod(Types, Desc)
 
 		alias ParentTypes = Filter!(IsParent, Fields!U);
 	}
-
-	/// returns static array containing order numbers of
-	/// T members having children
-	/// the numbers are ordered in ascending order
-	template ParentNumbers(T)
-	{
-		import std.meta : AliasSeq;
-		import std.traits : PointerTarget;
-
-		alias S = AliasSeq!();
-		static foreach(i; 0..Length)
-			// Pointer = Tbi!(T, i)
-			// Pointee = PointerTarget!Pointer
-			// Model   = Model!Pointee
-			static if (Model!(PointerTarget!(Tbi!(T, i))).Collapsable)
-				S = AliasSeq!(S, i);
-
-		auto initialize()
-		{
-			ubyte[S.length] par;
-			static foreach(i; 0..S.length)
-				par[i] = S[i];
-			return par;
-		}
-
-		enum ParentNumbers = initialize();
-	}
 }
 
 mixin template skorokhodHelper(T, Desc = T)
@@ -282,7 +273,6 @@ mixin template skorokhodHelper(T, Desc = T)
 	alias tbi       = Skor.tbi;
 	alias isParent  = Skor.isParent;
 	alias stringOf  = Skor.stringOf;
-	alias ParentNumbers = Skor.ParentNumbers;
 	alias ParentTypes   = Skor.ParentTypes;
 	alias childrenCount = Skor.childrenCount;
 

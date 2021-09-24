@@ -1,6 +1,6 @@
 module skorokhod.test1;
 
-import std.algorithm : map, equal;
+import std.algorithm : map;
 import std.stdio;
 
 import skorokhod.skorokhod;
@@ -25,6 +25,22 @@ struct Three
 	ubyte[2] ub2;
 	One[3] one;
 	Two[] two;
+}
+
+bool equal(S, E)(S sample, E etalon)
+{
+	import std.range : front, popFront, empty;
+	foreach(i; 0..etalon.length)
+	{
+		import std.conv : text;
+		assert(sample.front == etalon[0], text(i, ": ", *sample.front, "\n", i, ": ", *etalon.front));
+		sample.popFront;
+		etalon.popFront;
+	}
+	assert(sample.empty);
+	assert(etalon.empty);
+
+	return true;
 }
 
 @("mbi-One")
@@ -95,12 +111,8 @@ version(none) unittest
 	auto r = rangeOver(one);
 	version(none)
 	{
-		auto r1 = r;
-		while(!r1.empty)
-		{
-			writeln(*r1.front);
-			r1.popFront;
-		}
+		import std;
+		r.save.map!"*a".each!writeln;
 		writeln("===");
 	}
 
@@ -113,27 +125,35 @@ unittest
 {
 	mixin skorokhodHelper!(Three);
 
-	Three three;
+	auto three = Three(0, [1, 2], [One("str3", 4), One("str5", 6), One("str7", 8)]);
 	auto r = rangeOver(three);
 	version(none) 
 	{
-		auto r1 = r;
-		while(!r1.empty)
-		{
-			writeln(*r1.front);
-			r1.popFront;
-		}
+		import std;
+		r.save.map!"*a".each!writeln;
 		writeln("===");
 	}
 
 	auto etalon = [
-		Reference(&three.sh), 
-		Reference(&three.ub2), 
-		Reference(&three.one), 
+		Reference(&three),
+		Reference(&three.sh),
+		Reference(&three.ub2),
+		Reference(&three.ub2[0]),
+		Reference(&three.ub2[1]),
+		Reference(&three.one),
+		Reference(&three.one[0]),
+		Reference(&three.one[0].str),
+		Reference(&three.one[0].i),
+		Reference(&three.one[1]),
+		Reference(&three.one[1].str),
+		Reference(&three.one[1].i),
+		Reference(&three.one[2]),
+		Reference(&three.one[2].str),
+		Reference(&three.one[2].i),
 		Reference(&three.two)
 	];
 
-	assert(r.equal(etalon));
+	r.equal(etalon);
 }
 
 @("isParent")
@@ -143,10 +163,23 @@ unittest
 
 	Three three;
 	auto r = rangeOver(three);
-	assert(!isParent(r.front)); r.popFront;
-	assert( isParent(r.front)); r.popFront;
-	assert( isParent(r.front)); r.popFront;
-	assert( isParent(r.front));
+
+	assert( isParent(r.front)); r.popFront; // three
+	assert(!isParent(r.front)); r.popFront; // three.sh
+	assert( isParent(r.front)); r.popFront; // three.ub2
+	assert(!isParent(r.front)); r.popFront; // three.ub2[0]
+	assert(!isParent(r.front)); r.popFront; // three.ub2[1]
+	assert( isParent(r.front)); r.popFront; // three.one
+	assert( isParent(r.front)); r.popFront; // three.one[0]
+	assert(!isParent(r.front)); r.popFront; // three.one[0].str
+	assert(!isParent(r.front)); r.popFront; // three.one[0].i
+	assert( isParent(r.front)); r.popFront; // three.one[1]
+	assert(!isParent(r.front)); r.popFront; // three.one[1].str
+	assert(!isParent(r.front)); r.popFront; // three.one[1].i
+	assert( isParent(r.front)); r.popFront; // three.one[2]
+	assert(!isParent(r.front)); r.popFront; // three.one[2].str
+	assert(!isParent(r.front)); r.popFront; // three.one[2].i
+	assert( isParent(r.front)); r.popFront; // three.two
 }
 
 @("childrenCount")
@@ -156,10 +189,23 @@ unittest
 
 	Three three;
 	auto r = rangeOver(three);
-	assert(childrenCount(r.front) == 0); r.popFront;
-	assert(childrenCount(r.front) == 2); r.popFront;
-	assert(childrenCount(r.front) == 3); r.popFront;
-	assert(childrenCount(r.front) == 0);
+
+	assert(childrenCount(r.front) == 4); r.popFront; // three
+	assert(childrenCount(r.front) == 0); r.popFront; // three.sh
+	assert(childrenCount(r.front) == 2); r.popFront; // three.ub2
+	assert(childrenCount(r.front) == 0); r.popFront; // three.ub2[0]
+	assert(childrenCount(r.front) == 0); r.popFront; // three.ub2[1]
+	assert(childrenCount(r.front) == 3); r.popFront; // three.one
+	assert(childrenCount(r.front) == 2); r.popFront; // three.one[0]
+	assert(childrenCount(r.front) == 0); r.popFront; // three.one[0].str
+	assert(childrenCount(r.front) == 0); r.popFront; // three.one[0].i
+	assert(childrenCount(r.front) == 2); r.popFront; // three.one[1]
+	assert(childrenCount(r.front) == 0); r.popFront; // three.one[1].str
+	assert(childrenCount(r.front) == 0); r.popFront; // three.one[1].i
+	assert(childrenCount(r.front) == 2); r.popFront; // three.one[2]
+	assert(childrenCount(r.front) == 0); r.popFront; // three.one[2].str
+	assert(childrenCount(r.front) == 0); r.popFront; // three.one[2].i
+	assert(childrenCount(r.front) == 0); r.popFront; // three.two
 }
 
 // In this test one field of target data structure is skipped
@@ -184,19 +230,19 @@ unittest
 	auto r = rangeOver(two);
 	version(none) 
 	{
-		auto r1 = r;
-		while(!r1.empty)
-		{
-			writeln(*r1.front);
-			r1.popFront;
-		}
+		import std;
+		r.save.map!"*a".each!writeln;
 		writeln("===");
 	}
 
 	auto etalon = [
+		Reference(&two), 
 		Reference(&two.f), 
 		Reference(&two.one), 
+		Reference(&two.one.str), 
+		Reference(&two.one.i), 
 		Reference(&two.str),
+		// Reference(&two.d), - disabled
 	];
 
 	assert(r.equal(etalon));
@@ -213,12 +259,8 @@ unittest
 	auto r = rangeOver(two);
 	version(none) 
 	{
-		auto r1 = r;
-		while(!r1.empty)
-		{
-			writeln(*r1.front);
-			r1.popFront;
-		}
+		import std;
+		r.save.map!"*a".each!writeln;
 		writeln("===");
 	}
 
@@ -236,8 +278,6 @@ unittest
 unittest
 {
 	mixin skorokhodHelper!(Three);
-
-	static assert(ParentNumbers!Three[].equal([1, 2, 3]));
 
 	import std.meta : AliasSeq;
 	static assert(is(ParentTypes!Three == AliasSeq!(ubyte[2], One[3], Two[])));
