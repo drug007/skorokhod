@@ -52,7 +52,6 @@ unittest
 	mixin skorokhodHelper!(One);
 
 	assert(*mbi(one, 0) == "str");
-	assert( tbi(one, 0) == "string*");
 	assert( mbi(one, 0) == &one.str);
 
 	assert(*mbi(one, 1) == 100);
@@ -72,7 +71,6 @@ unittest
 	mixin skorokhodHelper!(Three);
 
 	assert(*mbi(three, 0) == 1);
-	assert( tbi(three, 0) == "short*");
 	assert( mbi(three, 0) == &three.sh);
 
 	import std.array : staticArray;
@@ -80,11 +78,9 @@ unittest
 	assert( mbi(three, 1) == &three.ub2);
 
 	assert(*mbi(three, 2) == [ One("str1", 1), One("str2", 2), One("str3", 3), ].staticArray);
-	assert( tbi(three, 2) == "One[3]*");
 	assert( mbi(three, 2) == &three.one);
 
 	assert(*mbi(three, 3) == [Two()].init);
-	assert( tbi(three, 3) == "Two[]*");
 	assert( mbi(three, 3) == &three.two);
 }
 

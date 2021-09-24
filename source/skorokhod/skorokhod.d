@@ -6,7 +6,6 @@ template Skorokhod(Types, Desc)
 {
 	import skorokhod.model;
 
-	enum Length = Desc.tupleof.length;	
 	alias Reference = TaggedAlgebraic!Types;
 
 	private struct Record
@@ -185,25 +184,6 @@ template Skorokhod(Types, Desc)
 			static assert(0);
 	}
 
-	template Tbi(T, size_t idx)
-	{
-		enum name = __traits(identifier, Desc.tupleof[idx]);
-		alias Tbi = typeof(__traits(getMember, T, name))*;
-	}
-
-	/// tbi - return string representation of a member type by index
-	auto tbi(A)(ref A value, size_t idx)
-	{
-		switch(idx)
-		{
-			static foreach(k; 0..Length)
-				case k:
-					return Tbi!(A, k).stringof;
-			default:
-				assert(0);
-		}
-	}
-
 	auto cbi(Reference reference, size_t idx)
 	{
 		import std.exception : enforce;
@@ -270,7 +250,6 @@ mixin template skorokhodHelper(T, Desc = T)
 	alias rangeOver = Skor.rangeOver;
 	alias Reference = Skor.Reference;
 	alias mbi       = Skor.mbi;
-	alias tbi       = Skor.tbi;
 	alias isParent  = Skor.isParent;
 	alias stringOf  = Skor.stringOf;
 	alias ParentTypes   = Skor.ParentTypes;
