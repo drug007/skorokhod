@@ -1,12 +1,8 @@
 module skorokhod.skorokhod;
 
-import taggedalgebraic;
-
-template Skorokhod(Types)
+template Skorokhod(Reference)
 {
 	import skorokhod.model;
-
-	alias Reference = TaggedAlgebraic!Types;
 
 	private struct Record
 	{
@@ -14,7 +10,11 @@ template Skorokhod(Types)
 		Reference reference;
 	}
 
-	private struct StateStack
+	// allows to iterate over T members (or their subset
+	// defined by Desc description)
+	// only compile-time filtering is available
+	// run-time one should be implemented by other ways
+	struct RangeOver
 	{
 		import std.exception : enforce;
 		import auxil.treepath : TreePath;
@@ -25,27 +25,72 @@ template Skorokhod(Types)
 		TreePath path;
 
 		@disable this();
+		@disable this(this);
+		@disable this(ref return scope const RangeOver rhs);
 
-		this(size_t total, Reference reference)
+		this(Reference reference)
 		{
-			stack ~= Record(0, total, reference);
+			stack ~= Record(0, 1, reference);
 			path.put(0);
 		}
 
-		void push()
+		this(ref return scope RangeOver rhs)
 		{
-			stack ~= Record(0, childrenCount(current), current);
+			stack = rhs.stack.dup;
+			path  = rhs.path;
+		}
+
+		private void push()
+		{
+			stack ~= Record(0, childrenCount(front), front);
 			path.put(cast(int) idx);
 		}
 
-		void pop()
+		private void pop()
 		{
 			enforce(!empty);
 			stack = stack[0..$-1];
 			path.popBack;
 		}
 
-		auto current()
+		private auto idx() const
+		{
+			enforce(!empty);
+			return stack[$-1].idx;
+		}
+
+		private auto total() const
+		{
+			enforce(!empty);
+			return stack[$-1].total;
+		}
+
+		private bool inProgress() const
+		{
+			enforce(!empty);
+			return stack[$-1].idx < stack[$-1].total;
+		}
+
+		private void nextChild()
+		{
+			enforce(inProgress);
+			stack[$-1].idx++;
+			path.back = cast(int) idx;
+		}
+
+		size_t nestingLevel() const
+		{
+			return stack.length;
+		}
+
+		// InputRange interface
+
+		bool empty() const
+		{
+			return stack.length == 0;
+		}
+
+		auto front()
 		{
 			enforce(!empty);
 
@@ -57,90 +102,27 @@ template Skorokhod(Types)
 			return cbi(stack[$-1].reference, idx);
 		}
 
-		auto idx() const
-		{
-			enforce(!empty);
-			return stack[$-1].idx;
-		}
-
-		auto total() const
-		{
-			enforce(!empty);
-			return stack[$-1].total;
-		}
-
-		bool empty() const
-		{
-			return stack.length == 0;
-		}
-
-		bool inProgress() const
-		{
-			enforce(!empty);
-			return stack[$-1].idx < stack[$-1].total;
-		}
-
-		void nextChild()
-		{
-			enforce(inProgress);
-			stack[$-1].idx++;
-			path.back = cast(int) idx;
-		}
-
-		size_t nestingLevel() const
-		{
-			return stack.length;
-		}
-	}
-
-	// allows to iterate over T members (or their subset
-	// defined by Desc description)
-	// only compile-time filtering is available
-	// run-time one should be implemented by other ways
-	struct RangeOver(T)
-	{
-		@safe:
-
-		private T* _value;
-		private StateStack _stack;
-
-		this(ref T value) @trusted
-		{
-			_value = &value;
-			_stack = StateStack(1, Reference(_value));
-		}
-
-		bool empty() const
-		{
-			return _stack.empty;
-		}
-
-		Reference front()
-		{
-			return _stack.current;
-		}
-
 		void popFront() @trusted
 		{
 			// Clear the stack from records where
 			// all children has been visited
 			scope(exit)
 			{
-				while(!_stack.empty && !_stack.inProgress)
-					_stack.pop;
+				while(!empty && !inProgress)
+					pop;
 			}
 
-			if (_stack.nestingLevel == 1 || (isParent(_stack.current) && _stack.total))
+			if (nestingLevel == 1 || (isParent(front) && total))
 			{
-				_stack.push;
-				assert(_stack.idx == 0);
+				push;
+				assert(idx == 0);
 				// in grand parent record go to the next child
 				// (i.e. go to the next parent) 
-				_stack.stack[$-2].idx++;
+				stack[$-2].idx++;
 				return;
 			}
 			assert(!empty);
-			_stack.nextChild;
+			nextChild;
 		}
 
 		auto save()
@@ -149,106 +131,172 @@ template Skorokhod(Types)
 		}
 	}
 
+	auto rangeOver(Reference reference)
+	{
+		return RangeOver(reference);
+	}
+
 	auto rangeOver(T)(ref T value)
 	{
-		return RangeOver!T(value);
+		return RangeOver(reference(value));
 	}
 
-	/// mbi - member by index
-	/// allows access to aggregate type members
-	/// by index. Not all members are available, it
-	/// depends on describing type.
-	auto mbi(A, D = A)(ref A value, size_t idx)
+	static if (CT!Reference)
 	{
-		import std.traits : isAggregateType, isArray;
+		import taggedalgebraic : apply;
 
-		static if (isAggregateType!A)
+		/// mbi - member by index
+		/// allows access to aggregate type members
+		/// by index. Not all members are available, it
+		/// depends on describing type.
+		auto mbi(A, D = A)(ref A value, size_t idx)
 		{
-			switch(idx)
+			import std.traits : isAggregateType, isArray;
+
+			static if (isAggregateType!A)
 			{
-				static foreach(k; 0..D.tupleof.length)
-					case k:
-					{
-						// get the name from description
-						enum name = __traits(identifier, D.tupleof[k]);
-						// return the field of the given name
-						return Reference(&__traits(getMember, value, name));
-					}
-				default:
-					assert(0);
+				switch(idx)
+				{
+					static foreach(k; 0..D.tupleof.length)
+						case k:
+						{
+							// get the name from description
+							enum name = __traits(identifier, D.tupleof[k]);
+							// return the field of the given name
+							return Reference(&__traits(getMember, value, name));
+						}
+					default:
+						assert(0);
+				}
 			}
+			else static if (isArray!A)
+				return Reference(&value[idx]);
+			else
+				static assert(0);
 		}
-		else static if (isArray!A)
-			return Reference(&value[idx]);
-		else
-			static assert(0);
-	}
 
-	auto cbi(Reference reference, size_t idx)
-	{
-		import std.exception : enforce;
-		import std.traits : isArray;
+		auto cbi(Reference reference, size_t idx)
+		{
+			import std.exception : enforce;
+			import std.traits : isArray;
+			import taggedalgebraic : apply, get;
 
-		enforce(isParent(reference));
-		return reference.apply!((ref v) {
-			alias V = typeof(*v);
-			static if (IsParent!V)
-				return mbi!V(*reference.get!(V*), idx);
-			else
-				return Reference();
-		});
-	}
-
-	auto childrenCount(Reference reference)
-	{
-		import std.traits : isArray;
-
-		return reference.apply!((ref v) {
-			alias V = typeof(*v);
-			static if (IsParent!V)
-			{
-				static if (isArray!V)
-					return v.length;
+			enforce(isParent(reference));
+			return reference.apply!((ref v) {
+				alias V = typeof(*v);
+				static if (IsParent!V)
+					return mbi!V(*reference.get!(V*), idx);
 				else
-					return V.tupleof.length;
-			}
-			else
-				return 0;
-		});
+					return Reference();
+			});
+		}
+
+		auto childrenCount(Reference reference)
+		{
+			import std.traits : isArray;
+
+			return reference.apply!((ref v) {
+				alias V = typeof(*v);
+				static if (IsParent!V)
+				{
+					static if (isArray!V)
+						return v.length;
+					else
+						return V.tupleof.length;
+				}
+				else
+					return 0;
+			});
+		}
+
+		auto isParent(Reference reference)
+		{
+			return reference.apply!((ref v) {
+				alias VT = typeof(*v);
+				return IsParent!VT;
+			});
+		}
+
+		string stringOf(Reference reference)
+		{
+			return reference.apply!((ref v) {
+				alias VT = typeof(v);
+				return VT.stringof;
+			});
+		}
+
+		enum IsParent(U) = Model!U.Collapsable;
+
+		template ParentTypes(U)
+		{
+			import std.meta : Filter;
+			import std.traits : Fields;
+
+			alias ParentTypes = Filter!(IsParent, Fields!U);
+		}
+
+		auto reference(T)(ref T value)
+		{
+			return Reference(&value);
+		}
+	}
+	else
+	{
+		import skorokhod.description : ParentType, Var;
+
+		auto childrenCount(Reference reference) @trusted
+		{
+			assert(isParent(reference));
+			if (auto parent = getParent(reference))
+				return parent.children.length;
+
+			return 0;
+		}
+
+		bool isParent(Reference reference) @trusted
+		{
+			return getParent(reference) !is null;
+		}
+
+		private ParentType getParent(Reference reference) @trusted
+		{
+			auto r = reference;
+			if (auto var = cast(Var) reference)
+				r = var.type;
+			return cast(ParentType) r;
+		}
+
+		auto cbi(Reference reference, size_t idx)
+		{
+			assert(isParent(reference));
+			if (auto parent = getParent(reference))
+				return parent.children[idx];
+
+			return null;
+		}
+
+		auto reference(Reference reference)
+		{
+			return reference;
+		}
 	}
 
-	auto isParent(Reference reference)
+	// Compile Time vs Run Time
+	template CT(U)
 	{
-		return reference.apply!((ref v) {
-			alias VT = typeof(*v);
-			return IsParent!VT;
-		});
-	}
-
-	string stringOf(Reference reference)
-	{
-		return reference.apply!((ref v) {
-			alias VT = typeof(v);
-			return VT.stringof;
-		});
-	}
-
-	private enum IsParent(U) = Model!U.Collapsable;
-
-	template ParentTypes(U)
-	{
-		import std.meta : Filter;
-		import std.traits : Fields;
-
-		alias ParentTypes = Filter!(IsParent, Fields!U);
+		import taggedalgebraic : TaggedAlgebraic;
+		enum CT = is(Reference == TaggedAlgebraic!Types, Types);
 	}
 }
 
-mixin template skorokhodHelper(T)
+mixin template skorokhodHelperCT(T)
 {
-	alias Skor = Skorokhod!(Types!T);
+	import taggedalgebraic : TaggedAlgebraic;
+
+	alias Reference = TaggedAlgebraic!(Types!T);
+	alias reference = Skor.reference;
+	alias Skor      = Skorokhod!Reference;
 	alias rangeOver = Skor.rangeOver;
-	alias Reference = Skor.Reference;
 	alias mbi       = Skor.mbi;
 	alias isParent  = Skor.isParent;
 	alias stringOf  = Skor.stringOf;
@@ -303,4 +351,15 @@ mixin template skorokhodHelper(T)
 			}
 		}
 	}
+}
+
+mixin template skorokhodHelperRT(T)
+{
+	import taggedalgebraic : TaggedAlgebraic;
+
+	alias Reference = T;
+	alias Skor      = Skorokhod!Reference;
+	alias rangeOver = Skor.rangeOver;
+	alias isParent  = Skor.isParent;
+	alias childrenCount = Skor.childrenCount;
 }

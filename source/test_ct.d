@@ -1,4 +1,8 @@
-module skorokhod.test1;
+module test_ct;
+
+/************************************
+	Test for compile time features
+************************************/
 
 import std.algorithm : map;
 import std.stdio;
@@ -49,7 +53,7 @@ unittest
 	One one;
 	one.i = 100;
 
-	mixin skorokhodHelper!(One);
+	mixin skorokhodHelperCT!(One);
 
 	assert(*mbi(one, 0) == "str");
 	assert( mbi(one, 0) == &one.str);
@@ -68,7 +72,7 @@ unittest
 		[]
 	);
 
-	mixin skorokhodHelper!(Three);
+	mixin skorokhodHelperCT!(Three);
 
 	assert(*mbi(three, 0) == 1);
 	assert( mbi(three, 0) == &three.sh);
@@ -101,7 +105,7 @@ unittest
 @("One")
 version(none) unittest
 {
-	mixin skorokhodHelper!(One);
+	mixin skorokhodHelperCT!(One);
 
 	One one;
 	auto r = rangeOver(one);
@@ -119,7 +123,7 @@ version(none) unittest
 @("Three0")
 unittest
 {
-	mixin skorokhodHelper!(Three);
+	mixin skorokhodHelperCT!(Three);
 
 	auto three = Three(0, [1, 2], [One("str3", 4), One("str5", 6), One("str7", 8)]);
 	auto r = rangeOver(three);
@@ -155,7 +159,7 @@ unittest
 @("isParent")
 unittest
 {
-	mixin skorokhodHelper!(Three);
+	mixin skorokhodHelperCT!(Three);
 
 	Three three;
 	auto r = rangeOver(three);
@@ -181,7 +185,7 @@ unittest
 @("childrenCount")
 unittest
 {
-	mixin skorokhodHelper!(Three);
+	mixin skorokhodHelperCT!(Three);
 
 	Three three;
 	auto r = rangeOver(three);
@@ -220,7 +224,7 @@ version(none) unittest
 		version(none) bool d; // disable the field
 	}
 
-	mixin skorokhodHelper!(Three, DescList);
+	mixin skorokhodHelperCT!(Three, DescList);
 
 	auto two = Two(1., One(), "str", 3.);
 	auto r = rangeOver(two);
@@ -244,12 +248,12 @@ version(none) unittest
 	assert(r.equal(etalon));
 }
 
-@("Two, using Model as description")
+@("Two, using a description")
 version(none) unittest
 {
 	import skorokhod.model;
 
-	mixin skorokhodHelper!(Three, Model!Two);
+	mixin skorokhodHelperCT!(Three, Model!Two);
 
 	auto two = Two(1., One(), "str", 3.);
 	auto r = rangeOver(two);
@@ -273,7 +277,7 @@ version(none) unittest
 @("parents")
 unittest
 {
-	mixin skorokhodHelper!(Three);
+	mixin skorokhodHelperCT!(Three);
 
 	import std.meta : AliasSeq;
 	static assert(is(ParentTypes!Three == AliasSeq!(ubyte[2], One[3], Two[])));
