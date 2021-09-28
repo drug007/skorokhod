@@ -137,6 +137,7 @@ template Skorokhod(Reference)
 	}
 
 	auto rangeOver(T)(ref T value)
+		if (__traits(compiles, reference(value)))
 	{
 		return RangeOver(reference(value));
 	}
@@ -294,14 +295,14 @@ mixin template skorokhodHelperCT(T)
 	import taggedalgebraic : TaggedAlgebraic;
 
 	alias Reference = TaggedAlgebraic!(Types!T);
-	alias reference = Skor.reference;
-	alias Skor      = Skorokhod!Reference;
-	alias rangeOver = Skor.rangeOver;
-	alias mbi       = Skor.mbi;
-	alias isParent  = Skor.isParent;
-	alias stringOf  = Skor.stringOf;
-	alias ParentTypes   = Skor.ParentTypes;
-	alias childrenCount = Skor.childrenCount;
+	alias reference = CT.reference;
+	alias CT        = Skorokhod!Reference;
+	alias rangeOver = CT.rangeOver;
+	alias mbi       = CT.mbi;
+	alias isParent  = CT.isParent;
+	alias stringOf  = CT.stringOf;
+	alias ParentTypes   = CT.ParentTypes;
+	alias childrenCount = CT.childrenCount;
 
 	// Generates a structure, containing all needed types to pass to TaggedAlgebraic
 	// that's a workaround that TaggedAlgebraic accepts only aggregate types or enum
@@ -358,8 +359,8 @@ mixin template skorokhodHelperRT(T)
 	import taggedalgebraic : TaggedAlgebraic;
 
 	alias Reference = T;
-	alias Skor      = Skorokhod!Reference;
-	alias rangeOver = Skor.rangeOver;
-	alias isParent  = Skor.isParent;
-	alias childrenCount = Skor.childrenCount;
+	alias RT        = Skorokhod!Reference;
+	alias rangeOver = RT.rangeOver;
+	alias isParent  = RT.isParent;
+	alias childrenCount = RT.childrenCount;
 }

@@ -81,6 +81,7 @@ unittest
 auto print(R)(R r)
 {
 	import std : writeln, repeat;
+	import std.range : front, popFront, empty;
 
 	while(!r.empty)
 	{
