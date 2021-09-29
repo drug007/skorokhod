@@ -26,7 +26,7 @@ static this()
 	StrVar = new Var("str", StringType);
 	IntVar = new Var("i", IntType);
 	OneType = new AggregateType("One", [StrVar, IntVar]);
-	OneVar = new Var("one", OneType);
+	OneVar = new Var("one", new StaticArray(OneType, 3));
 
 	TwoType = new AggregateType("Two", [
 		new Var("f", FloatType), 
@@ -53,7 +53,14 @@ static this()
 		new Var("ub", new StaticArray(UbyteType, 2)),
 		new Type("ubyte"),
 		new Type("ubyte"),
-		new Var("one", OneType),
+		new Var("one", new StaticArray(OneType, 3)),
+		OneType,
+		new Var("str", StringType),
+		new Var("i", IntType),
+		OneType,
+		new Var("str", StringType),
+		new Var("i", IntType),
+		OneType,
 		new Var("str", StringType),
 		new Var("i", IntType),
 		new Var("two", new DynamicArray(TwoType, 1)),

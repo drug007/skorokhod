@@ -17,6 +17,7 @@ unittest
 	mixin skorokhodHelperCT!(Three);
 
 	Three three;
+	three.two ~= Two();
 	auto ctr = rangeOver(three);
 	auto rtr = rangeOver(threeDesc);
 
