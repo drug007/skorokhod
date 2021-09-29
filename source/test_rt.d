@@ -2,11 +2,13 @@ module test_rt;
 
 /************************************
 	Test for run time features
-************************************/import skorokhod.description;
+************************************/
+
+import skorokhod.description;
 	
 Type Float, Ubyte, String, Int, Double, Short;
 AggregateType OneT, TwoT, ThreeT;
-Var threeDesc;
+AggregateVar threeDesc;
 
 Node[] etalon;
 
@@ -82,6 +84,50 @@ unittest
 	auto r = rangeOver(threeDesc);
 	version(none) print(r);
 	assert(r.equal(etalon));
+}
+
+@("skip")
+unittest
+{
+	import skorokhod.skorokhod;
+	mixin skorokhodHelperRT!Var;
+
+	auto r = rangeOver(threeDesc);
+	// version(none) print(r);
+	// assert(r.equal(etalon[0..1]));
+	{
+		import std : writeln, repeat;
+		import std.range : front, popFront, empty;
+
+		threeDesc.field("one").as!ArrayVar.collapsed = true;
+		threeDesc.field("two").as!ArrayVar.elements[0].as!AggregateVar.field("one").as!AggregateVar.collapsed = true;
+		while(!r.empty)
+		{
+			auto prefix = ' '.repeat(2*(r.nestingLevel-1));
+			auto sn = r.front.name;
+			if (sn == "")
+				sn = r.front.type.name;
+			writeln(prefix, sn);
+
+			// process collapsed state
+			{
+				bool collapsed;
+				if (auto at = cast(AggregateVar) r.front)
+					collapsed = at.collapsed;
+				else if (auto a = cast(ArrayVar) r.front)
+					collapsed = a.collapsed;
+
+
+				if (collapsed)
+				{
+					r.skip;
+					continue;
+				}
+			}
+			
+			r.popFront;
+		}
+	}
 }
 
 auto print(R)(R r)

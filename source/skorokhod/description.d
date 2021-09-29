@@ -65,6 +65,11 @@ class ParentType : Type
 	{
 		super(name);
 	}
+
+	mixin opEqualsMixin;
+
+private:
+	bool _collapsed;
 }
 
 class ScalarType : Type
@@ -156,6 +161,11 @@ class Var : Node
 
 	abstract Var clone();
 
+	auto as(T)()
+	{
+		return cast(T) this;
+	}
+
 private:
 	Type _type;
 }
@@ -192,8 +202,32 @@ class AggregateVar : Var
 		return new AggregateVar(name, cast(AggregateType) type);
 	}
 
+	Var field(string field)
+	{
+		foreach(f; fields)
+			if (f.name == field)
+				return f;
+		
+		return null;
+	}
+
+	bool collapsed()
+	{
+		if (auto parent = cast(ParentType) type)
+			return _collapsed;
+		else
+			return false;
+	}
+
+	void collapsed(bool value)
+	{  
+		if (auto parent = cast(ParentType) type)
+			_collapsed = value;
+	}
+
 private:
 	Var[] _fields;
+	bool _collapsed;
 }
 
 class ArrayVar : Var
@@ -215,8 +249,23 @@ class ArrayVar : Var
 		return new ArrayVar(name, cast(Array) type);
 	}
 
+	bool collapsed()
+	{
+		if (auto parent = cast(ParentType) type)
+			return _collapsed;
+		else
+			return false;
+	}
+
+	void collapsed(bool value)
+	{  
+		if (auto parent = cast(ParentType) type)
+			_collapsed = value;
+	}
+
 private:
 	Var[] _elements;
+	bool _collapsed;
 }
 
 Var var(string name, Type type)

@@ -83,6 +83,14 @@ template Skorokhod(Reference)
 			return stack.length;
 		}
 
+		// skip the current level and levels below the current
+		void skip()
+		{
+			stack[$-1].idx = stack[$-1].total-1;
+			while(!empty && !inProgress)
+				pop;
+		}
+
 		// InputRange interface
 
 		bool empty() const
