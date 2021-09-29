@@ -2,6 +2,31 @@ module skorokhod.description;
 
 @safe:
 
+mixin template opEqualsMixin()
+{
+	override bool opEquals(Object other) @trusted
+	{
+		if (this is other)
+			return true;
+
+		if (!super.opEquals(other))
+			return false;
+
+		if (auto o = cast(typeof(this)) other)
+		{
+			// TODO dynamic arrays and pointers will be compared by their own value,
+			// not by their payload
+			static foreach(i; 0..this.tupleof.length)
+				if (this.tupleof[i] != o.tupleof[i])
+					return false;
+
+			return true;
+		}
+
+		return false;
+	}
+}
+
 class Node
 {
 	this(string name)
@@ -17,7 +42,7 @@ class Node
 	override bool opEquals(Object other)
 	{
 		if (auto o = cast(typeof(this)) other)
-			return _name == o._name;
+			return this.tupleof == o.tupleof;
 		else
 			return false;
 	}
@@ -43,22 +68,7 @@ class ParentType : Type
 
 	Children children() { return _children; }
 
-	override bool opEquals(Object other) @trusted
-	{
-		if (!super.opEquals(other))
-			return false;
-
-		if (auto o = cast(typeof(this)) other)
-		{
-			if (this is o)
-				return true;
-			// TODO dynamic arrays and pointers will be compared by their own value,
-			// not by their payload
-			return this.tupleof == o.tupleof;
-		}
-
-		return false;
-	}
+	mixin opEqualsMixin;
 
 private:
 	Children _children;
