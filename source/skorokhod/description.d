@@ -65,13 +65,6 @@ class ParentType : Type
 	{
 		super(name);
 	}
-
-	Children children() { return _children; }
-
-	mixin opEqualsMixin;
-
-private:
-	Children _children;
 }
 
 class ScalarType : Type
@@ -82,67 +75,21 @@ class ScalarType : Type
 	}
 }
 
-interface Children
-{
-	Node opIndex(size_t idx);
-	size_t length() const;
-}
-
-class HomogeneousChildren : Children
-{
-	this(Type type, size_t length)
-	{
-		_type = type;
-		_length = length;
-	}
-
-	Node opIndex(size_t idx)
-	{
-		assert(idx < length);
-		return _type;
-	}
-
-	size_t length() const
-	{
-		return _length;
-	}
-
-private:
-	Type   _type;
-	size_t _length;
-}
-
-class HeterogeneousChildren : Children
-{
-	this(Node[] children)
-	{
-		_children = children;
-	}
-
-	Node opIndex(size_t idx)
-	{
-		return _children[idx];
-	}
-
-	size_t length() const
-	{
-		return _children.length;
-	}
-
-private:
-	Node[] _children;
-}
-
 class AggregateType : ParentType
 {
-	this(string name, Var[] children = null)
+	this(string name, Var[] fields)
 	{
-		import std.algorithm : map;
-		import std.array : array;
-
 		super(name);
-		_children = new HeterogeneousChildren(children.map!((Node n)=>n).array);
+		_fields = fields;
 	}
+
+	auto fields()
+	{
+		return _fields;
+	}
+
+private:
+	Var[] _fields;
 }
 
 private class Array : ParentType
@@ -151,20 +98,32 @@ private class Array : ParentType
 	{
 		import std.format : format;
 
+		assert(type);
 		super(format("%s[%s]", type.name, length));
-		_children = new HomogeneousChildren(type, length);
+		_type   = type;
+		_length = length;
 	}
 
 	size_t length() const
 	{
-		return _children.length;
+		return _length;
 	}
+
+	Type type()
+	{
+		return _type;
+	}
+
+private:
+	Type   _type;
+	size_t _length;
 }
 
 final class StaticArray : Array
 {
 	this(Type type, size_t length)
 	{
+		assert(type);
 		super(type, length);
 	}
 }
@@ -178,10 +137,7 @@ final class DynamicArray : Array
 
 	void length(size_t length)
 	{
-		if (auto hc = cast(HomogeneousChildren) _children)
-			hc._length = length;
-		else
-			assert(0);
+		_length = length;
 	}
 }
 
@@ -198,6 +154,76 @@ class Var : Node
 		return _type;
 	}
 
+	abstract Var clone();
+
 private:
-	Type   _type;
+	Type _type;
+}
+
+class ScalarVar : Var
+{
+	this(string name, Type type)
+	{
+		super(name, type);
+	}
+
+	override ScalarVar clone()
+	{
+		return new ScalarVar(name, type);
+	}
+}
+
+class AggregateVar : Var
+{
+	this(string name, AggregateType type)
+	{
+		super(name, type);
+		foreach(e; type.fields)
+			_fields ~= e.clone;
+	}
+
+	auto fields()
+	{
+		return _fields;
+	}
+
+	override AggregateVar clone()
+	{
+		return new AggregateVar(name, cast(AggregateType) type);
+	}
+
+private:
+	Var[] _fields;
+}
+
+class ArrayVar : Var
+{
+	this(string name, Array type)
+	{
+		super(name, type);
+		foreach(_; 0..type.length)
+			_elements ~= var("", type.type);
+	}
+
+	auto elements()
+	{
+		return _elements;
+	}
+
+	override ArrayVar clone()
+	{
+		return new ArrayVar(name, cast(Array) type);
+	}
+
+private:
+	Var[] _elements;
+}
+
+Var var(string name, Type type)
+{
+	if (auto at = cast(AggregateType) type)
+		return new AggregateVar(name, at);
+	if (auto a = cast(Array) type)
+		return new ArrayVar(name, a);
+	return new ScalarVar(name, type);
 }

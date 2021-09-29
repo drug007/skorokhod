@@ -243,37 +243,52 @@ template Skorokhod(Reference)
 	}
 	else
 	{
-		import skorokhod.description : ParentType, Var;
+		import skorokhod.description : AggregateVar, ArrayVar, Var;
 
 		auto childrenCount(Reference reference) @trusted
 		{
-			assert(isParent(reference));
-			if (auto parent = getParent(reference))
-				return parent.children.length;
+			assert(cast(Var) reference);
 
-			return 0;
+			if (auto aggregate = cast(AggregateVar) reference)
+			{
+				return aggregate.fields.length;
+			}
+			else if (auto array = cast(ArrayVar) reference)
+			{
+				return array.elements.length;
+			}
+			else
+				return 0;
 		}
 
 		bool isParent(Reference reference) @trusted
 		{
-			return getParent(reference) !is null;
-		}
-
-		private ParentType getParent(Reference reference) @trusted
-		{
-			auto r = reference;
-			if (auto var = cast(Var) reference)
-				r = var.type;
-			return cast(ParentType) r;
+			assert(cast(Var) reference);
+			if (auto aggregate = cast(AggregateVar) reference)
+			{
+				return true;
+			}
+			else if (auto array = cast(ArrayVar) reference)
+			{
+				return true;
+			}
+			return false;
 		}
 
 		auto cbi(Reference reference, size_t idx)
 		{
-			assert(isParent(reference));
-			if (auto parent = getParent(reference))
-				return parent.children[idx];
+			assert(cast(Var) reference);
 
-			return null;
+			if (auto aggregate = cast(AggregateVar) reference)
+			{
+				return aggregate.fields[idx];
+			}
+			else if (auto array = cast(ArrayVar) reference)
+			{
+				return array.elements[idx];
+			}
+			else
+				return null;
 		}
 
 		auto reference(Reference reference)

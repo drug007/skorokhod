@@ -4,73 +4,72 @@ module test_rt;
 	Test for run time features
 ************************************/import skorokhod.description;
 	
-Type FloatType, UbyteType, StringType, IntType, DoubleType;
-AggregateType OneType, TwoType, ThreeType;
-
-Var ShVar, UbVar, StrVar, IntVar, OneVar, TwoVar, threeDesc;
-DynamicArray TwoTypeDynArray;
+Type Float, Ubyte, String, Int, Double, Short;
+AggregateType OneT, TwoT, ThreeT;
+Var threeDesc;
 
 Node[] etalon;
 
 static this()
 {
-	FloatType  = new Type("float");
-	UbyteType  = new Type("ubyte");
-	StringType = new Type("string");
-	IntType    = new Type("int");
-	DoubleType = new Type("double");
+	Short  = new Type("short");
+	Float  = new Type("float");
+	Ubyte  = new Type("ubyte");
+	String = new Type("string");
+	Int    = new Type("int");
+	Double = new Type("double");
 
-	ShVar = new Var("sh", StringType);
-	UbVar = new Var("ub", new StaticArray(UbyteType, 2));
-
-	StrVar = new Var("str", StringType);
-	IntVar = new Var("i", IntType);
-	OneType = new AggregateType("One", [StrVar, IntVar]);
-	OneVar = new Var("one", new StaticArray(OneType, 3));
-
-	TwoType = new AggregateType("Two", [
-		new Var("f", FloatType), 
-		new Var("one", OneType),
-		new Var("str", StringType),
-		new Var("d", DoubleType),
+	OneT = new AggregateType("OneT", [
+		new ScalarVar("str", String), 
+		new ScalarVar("i", Int),
 	]);
 
-	TwoTypeDynArray = new DynamicArray(TwoType, 1);
-	TwoVar = new Var("two", TwoTypeDynArray);
-	ThreeType = new AggregateType("Three", [ ShVar, UbVar, OneVar, TwoVar]);
-	threeDesc = new Var("three", ThreeType);
+	TwoT = new AggregateType("TwoT", [
+		new ScalarVar("f", Float),
+		new AggregateVar("one", OneT),
+		new ScalarVar("str", String),
+		new ScalarVar("d", Double),
+	]);
+
+	ThreeT = new AggregateType("Three", [
+		new ScalarVar("sh", Short), 
+		new ArrayVar("ub",  new StaticArray(Ubyte, 2)), 
+		new ArrayVar("one", new StaticArray(OneT, 3)), 
+		new ArrayVar("two", new DynamicArray(TwoT, 1)),
+	]);
+	threeDesc = new AggregateVar("three", ThreeT);
 
 	etalon = [
-		new Var("three", 
-			new AggregateType("Three", [ 
-				new Var("sh", StringType),                    // shVar
-				new Var("ub", new StaticArray(UbyteType, 2)), // UbVar 
-				new Var("one", OneType),                      // OneVar
-				new Var("two", TwoTypeDynArray),              // TwoVar
+		new ScalarVar("three", 
+			new AggregateType("Three", [
+				new ScalarVar("sh", Short), 
+				new ArrayVar("ub",  new StaticArray(Ubyte, 2)), 
+				new ArrayVar("one", new StaticArray(OneT, 3)), 
+				new ArrayVar("two", new DynamicArray(TwoT, 1)),
 			])
 		),
-		new Var("sh", StringType),
-		new Var("ub", new StaticArray(UbyteType, 2)),
-		new Type("ubyte"),
-		new Type("ubyte"),
-		new Var("one", new StaticArray(OneType, 3)),
-		OneType,
-		new Var("str", StringType),
-		new Var("i", IntType),
-		OneType,
-		new Var("str", StringType),
-		new Var("i", IntType),
-		OneType,
-		new Var("str", StringType),
-		new Var("i", IntType),
-		new Var("two", new DynamicArray(TwoType, 1)),
-		TwoType,
-		new Var("f", FloatType), 
-		new Var("one", OneType),
-		new Var("str", StringType),
-		new Var("i", IntType),
-		new Var("str", StringType),
-		new Var("d", DoubleType),
+		new ScalarVar("sh", Short),
+		new ArrayVar("ub", new StaticArray(Ubyte, 2)),
+		new ScalarVar("", Ubyte),
+		new ScalarVar("", Ubyte),
+		new ArrayVar("one", new StaticArray(OneT, 3)),
+		new ScalarVar("", OneT),
+		new ScalarVar("str", String),
+		new ScalarVar("i", Int),
+		new ScalarVar("", OneT),
+		new ScalarVar("str", String),
+		new ScalarVar("i", Int),
+		new ScalarVar("", OneT),
+		new ScalarVar("str", String),
+		new ScalarVar("i", Int),
+		new ArrayVar("two", new DynamicArray(TwoT, 1)),
+		new ScalarVar("", TwoT),
+		new ScalarVar("f", Float), 
+		new ScalarVar("one", OneT),
+		new ScalarVar("str", String),
+		new ScalarVar("i", Int),
+		new ScalarVar("str", String),
+		new ScalarVar("d", Double),
 	];
 }
 
@@ -93,7 +92,10 @@ auto print(R)(R r)
 	while(!r.empty)
 	{
 		auto prefix = ' '.repeat(2*(r.nestingLevel-1));
-		writeln(prefix, r.front.name);
+		auto sn = r.front.name;
+		if (sn == "")
+			sn = r.front.type.name;
+		writeln(prefix, sn);
 		r.popFront;
 	}
 }
