@@ -383,9 +383,14 @@ mixin template skorokhodHelperRT(T)
 	alias childrenCount = RT.childrenCount;
 }
 
-auto skipper(R)(R r)
+auto skipper(R)(ref R r)
 {
 	return Skipper!R(r);
+}
+
+auto skipper(M, S)(ref M m, ref S s)
+{
+	return Skipper!(M, S)(m, s);
 }
 
 /// the range skipping the current level if
@@ -398,11 +403,12 @@ struct Skipper(Master, S...)
 	{
 		alias Slave = S[0];
 		private Slave*  s;
+		public alias Payload = typeof(front());
 	}
 
 	static if (S.length == 1)
 	{
-		this(ref Master m, Slave s)
+		this(ref Master m, ref Slave s)
 		{
 			this.m = &m;
 			this.s = &s;

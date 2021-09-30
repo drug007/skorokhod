@@ -27,23 +27,18 @@ unittest
 	threeDesc.field("two").as!ArrayVar.elements[0].as!AggregateVar.field("one").as!AggregateVar.collapsed = true;
 
 	{
-		import std : writeln, repeat;
-		import std.range : front, popFront, empty;
+		import std.algorithm : each, map;
+		import std.stdio : writeln;
 
-		while(!ctr.empty && !rtr.empty)
-		{
-			auto prefix = ' '.repeat(2*(rtr.nestingLevel-1));
-			writeln(prefix, rtr.front.name, " ", *ctr.front);
-
-			if (rtr.front.collapsed)
-			{
-				rtr.skip;
-				ctr.skip;
-				continue;
-			}
-
-			ctr.popFront;
-			rtr.popFront;
-		}
+		auto s = skipper(rtr, ctr);
+		auto toString = (s.Payload t) {
+			import std : text, repeat;
+			auto prefix = ' '.repeat(2*(s.nestingLevel-1));
+			auto m = t[0];
+			auto s = t[1];
+			auto mtext = m.name == "" ? m.type.name : m.name;
+			return text(prefix, mtext, " ", *s);
+		};
+		s.map!toString.each!writeln;
 	}
 }
