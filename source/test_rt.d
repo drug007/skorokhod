@@ -155,15 +155,6 @@ struct Skipper(R)
 	}
 }
 
-bool collapsed(Var var)
-{
-	if (auto at = cast(AggregateVar) var)
-		return at.collapsed;
-	else if (auto a = cast(ArrayVar) var)
-		return a.collapsed;
-	return false;
-}
-
 auto print(R)(R r)
 {
 	import std : writeln, repeat;

@@ -161,6 +161,11 @@ class Var : Node
 
 	abstract Var clone();
 
+	bool collapsed()
+	{
+		return false;
+	}
+
 	auto as(T)()
 	{
 		return cast(T) this;
@@ -211,18 +216,14 @@ class AggregateVar : Var
 		return null;
 	}
 
-	bool collapsed()
+	override bool collapsed()
 	{
-		if (auto parent = cast(ParentType) type)
-			return _collapsed;
-		else
-			return false;
+		return _collapsed;
 	}
 
 	void collapsed(bool value)
-	{  
-		if (auto parent = cast(ParentType) type)
-			_collapsed = value;
+	{
+		_collapsed = value;
 	}
 
 private:
@@ -249,18 +250,14 @@ class ArrayVar : Var
 		return new ArrayVar(name, cast(Array) type);
 	}
 
-	bool collapsed()
+	override bool collapsed()
 	{
-		if (auto parent = cast(ParentType) type)
-			return _collapsed;
-		else
-			return false;
+		return _collapsed;
 	}
 
 	void collapsed(bool value)
-	{  
-		if (auto parent = cast(ParentType) type)
-			_collapsed = value;
+	{
+		_collapsed = value;
 	}
 
 private:
