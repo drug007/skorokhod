@@ -114,47 +114,6 @@ unittest
 	}
 }
 
-auto skipper(R)(R r)
-{
-	return Skipper!R(r);
-}
-
-/// the range skipping the current level if
-/// the current var has collapsed equal to true
-struct Skipper(R)
-{
-	private R* r;
-
-	this(ref R r)
-	{
-		this.r = &r;
-	}
-
-	bool empty() const
-	{
-		return r.empty;
-	}
-
-	auto front()
-	{
-		assert(!empty);
-		return r.front;
-	}
-
-	void popFront()
-	{
-		if (r.front.collapsed)
-			r.skip;
-		else
-			r.popFront;
-	}
-
-	auto nestingLevel()
-	{
-		return r.nestingLevel;
-	}
-}
-
 auto print(R)(R r)
 {
 	import std : writeln, repeat;

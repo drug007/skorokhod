@@ -382,3 +382,77 @@ mixin template skorokhodHelperRT(T)
 	alias isParent  = RT.isParent;
 	alias childrenCount = RT.childrenCount;
 }
+
+auto skipper(R)(R r)
+{
+	return Skipper!R(r);
+}
+
+/// the range skipping the current level if
+/// the current var has collapsed equal to true
+struct Skipper(Master, S...)
+	if (S.length < 2)
+{
+	private Master* m;
+	static if (S.length == 1)
+	{
+		alias Slave = S[0];
+		private Slave*  s;
+	}
+
+	static if (S.length == 1)
+	{
+		this(ref Master m, Slave s)
+		{
+			this.m = &m;
+			this.s = &s;
+		}
+	}
+	else
+	{
+		this(ref Master m)
+		{
+			this.m = &m;
+		}
+	}
+
+	bool empty() const
+	{
+		static if (S.length == 1)
+			assert(m.empty == s.empty);
+		return m.empty;
+	}
+
+	auto front()
+	{
+		assert(!empty);
+		static if (S.length == 1)
+		{
+			import std.typecons : tuple;
+			return tuple(m.front, s.front);
+		}
+		else
+			return m.front;
+	}
+
+	void popFront()
+	{
+		if (m.front.collapsed)
+		{
+			m.skip;
+			static if (S.length == 1)
+				s.skip;
+		}
+		else
+		{
+			m.popFront;
+			static if (S.length == 1)
+				s.popFront;
+		}
+	}
+
+	auto nestingLevel()
+	{
+		return m.nestingLevel;
+	}
+}
