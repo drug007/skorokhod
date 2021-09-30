@@ -132,11 +132,6 @@ template Skorokhod(Reference)
 			assert(!empty);
 			nextChild;
 		}
-
-		auto save()
-		{
-			return this;
-		}
 	}
 
 	auto rangeOver(Reference reference)

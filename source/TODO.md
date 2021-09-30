@@ -1,8 +1,9 @@
-[ ] Skip + twin iteration
+[x] Skip + twin iteration
+[ ] Test for skip + twin iteration
 [ ] Skiping of root children
 [ ] Add direction
 [ ] Go to element by its tree path
-[ ] Replace loop over ranges by another range
+[_] Replace loop over ranges by another range
 [ ] Add orientation
 [ ] Add size
 [ ] Pass auxil tests

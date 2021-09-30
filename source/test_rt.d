@@ -86,7 +86,7 @@ unittest
 	assert(r.equal(etalon));
 }
 
-@("skip")
+@("rt_skip")
 unittest
 {
 	import skorokhod.skorokhod;
@@ -99,24 +99,59 @@ unittest
 
 	// traverse the description
 	{
-		import std : writeln, repeat;
-		import std.range : front, popFront, empty;
-		while(!r.empty)
-		{
-			auto prefix = ' '.repeat(2*(r.nestingLevel-1));
-			auto sn = r.front.name;
+		import std.algorithm : each, map;
+		import std.stdio : writeln;
+		auto w = skipper(r);
+		auto toString = (Var v) {
+			import std : text, repeat;
+			auto prefix = ' '.repeat(2*(w.nestingLevel-1));
+			auto sn = v.name;
 			if (sn == "")
-				sn = r.front.type.name;
-			writeln(prefix, sn);
+				sn = v.type.name;
+			return text(prefix, sn);
+		};
+		w.map!toString.each!writeln;
+	}
+}
 
-			if (r.front.collapsed)
-			{
-				r.skip;
-				continue;
-			}
-			
+auto skipper(R)(R r)
+{
+	return Skipper!R(r);
+}
+
+/// the range skipping the current level if
+/// the current var has collapsed equal to true
+struct Skipper(R)
+{
+	private R* r;
+
+	this(ref R r)
+	{
+		this.r = &r;
+	}
+
+	bool empty() const
+	{
+		return r.empty;
+	}
+
+	auto front()
+	{
+		assert(!empty);
+		return r.front;
+	}
+
+	void popFront()
+	{
+		if (r.front.collapsed)
+			r.skip;
+		else
 			r.popFront;
-		}
+	}
+
+	auto nestingLevel()
+	{
+		return r.nestingLevel;
 	}
 }
 
