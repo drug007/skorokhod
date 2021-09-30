@@ -92,15 +92,15 @@ unittest
 	import skorokhod.skorokhod;
 	mixin skorokhodHelperRT!Var;
 
+	// set properties of the description
+	threeDesc.field("one").as!ArrayVar.collapsed = true;
+	threeDesc.field("two").as!ArrayVar.elements[0].as!AggregateVar.field("one").as!AggregateVar.collapsed = true;
 	auto r = rangeOver(threeDesc);
-	// version(none) print(r);
-	// assert(r.equal(etalon[0..1]));
+
+	// traverse the description
 	{
 		import std : writeln, repeat;
 		import std.range : front, popFront, empty;
-
-		threeDesc.field("one").as!ArrayVar.collapsed = true;
-		threeDesc.field("two").as!ArrayVar.elements[0].as!AggregateVar.field("one").as!AggregateVar.collapsed = true;
 		while(!r.empty)
 		{
 			auto prefix = ' '.repeat(2*(r.nestingLevel-1));
@@ -109,25 +109,24 @@ unittest
 				sn = r.front.type.name;
 			writeln(prefix, sn);
 
-			// process collapsed state
+			if (r.front.collapsed)
 			{
-				bool collapsed;
-				if (auto at = cast(AggregateVar) r.front)
-					collapsed = at.collapsed;
-				else if (auto a = cast(ArrayVar) r.front)
-					collapsed = a.collapsed;
-
-
-				if (collapsed)
-				{
-					r.skip;
-					continue;
-				}
+				r.skip;
+				continue;
 			}
 			
 			r.popFront;
 		}
 	}
+}
+
+bool collapsed(Var var)
+{
+	if (auto at = cast(AggregateVar) var)
+		return at.collapsed;
+	else if (auto a = cast(ArrayVar) var)
+		return a.collapsed;
+	return false;
 }
 
 auto print(R)(R r)
