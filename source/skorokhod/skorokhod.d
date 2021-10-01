@@ -21,8 +21,12 @@ template Skorokhod(Reference)
 
 		@safe:
 
+		enum Direction { forward = 1, backward = -1 }
+
 		Record[] stack;
 		TreePath path;
+		Direction direction;
+		private bool _empty;
 
 		@disable this();
 		@disable this(this);
@@ -86,16 +90,43 @@ template Skorokhod(Reference)
 		// skip the current level and levels below the current
 		void skip()
 		{
+			// stack[$-1].idx = stack[$-1].total-1;
+			// path.back = cast(int) stack[$-1].total-1;
+			// while(!empty && !inProgress)
+			// 	pop;
+			
 			stack[$-1].idx = stack[$-1].total-1;
-			while(!empty && !inProgress)
+			path.back = cast(int) stack[$-1].total-1;
+			if (!inProgress && nestingLevel > 1)
 				pop;
+			// if (nestingLevel == 1)
+			// {
+			// 	_empty = true;
+			// }
 		}
+
+		// private auto isNextPositionTheLastOne()
+		// {
+
+		// }
 
 		// InputRange interface
 
 		bool empty() const
 		{
-			return stack.length == 0;
+			// final switch (direction)
+			// {
+				// case Direction.forward:
+					return _empty || stack.length == 0;
+				// case Direction.backward:
+				// {
+				// 	if (stack.length == 0)
+				// 		return true;
+				// 	if (stack.length == 1 && stack[$-1].idx == 0)
+				// 	{
+
+				// 	}
+				// }
 		}
 
 		auto front()
@@ -112,25 +143,69 @@ template Skorokhod(Reference)
 
 		void popFront() @trusted
 		{
-			// Clear the stack from records where
-			// all children has been visited
-			scope(exit)
-			{
-				while(!empty && !inProgress)
-					pop;
-			}
+			// // Clear the stack from records where
+			// // all children has been visited
+			// scope(exit)
+			// {
+			// 	while(!empty && !inProgress)
+			// 		pop;
+			// }
 
-			if (nestingLevel == 1 || (isParent(front) && total))
+			// if (isParent(front) && total)
+			// {
+			// 	push;
+			// 	assert(idx == 0);
+			// 	// in grand parent record go to the next child
+			// 	// (i.e. go to the next parent) 
+			// 	stack[$-2].idx++;
+			// 	// path.value[$-2] = cast(int) stack[$-2].idx;
+			// 	return;
+			// }
+			// assert(!empty);
+			// nextChild;
+
+			if (isParent(front))
+			// the current node is non list node
 			{
-				push;
-				assert(idx == 0);
-				// in grand parent record go to the next child
-				// (i.e. go to the next parent) 
-				stack[$-2].idx++;
-				return;
+				
+				if (childrenCount(front))
+				{
+					// level down
+					push;
+				}
+				else
+					goto nochildren;
 			}
-			assert(!empty);
-			nextChild;
+			else
+			// the current node is the list
+			{
+				nochildren:
+				nextnodeexist:
+				// there is at least one another node at the current level
+				if (idx+1 < total)
+				{
+					// go to the next node at the current level
+					nextChild;
+				}
+				else
+				// there is no other node at the current level
+				{
+
+					if (nestingLevel > 1)
+					{
+						// level up
+						pop;
+						goto nextnodeexist;
+					}
+					else
+					{
+						// the current node is the last one in the current level
+						// the parent of the current node is the root of the tree
+						// nothing to do, finish
+						_empty = true;
+					}
+				}
+			}
 		}
 	}
 

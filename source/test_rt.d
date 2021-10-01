@@ -92,15 +92,42 @@ unittest
 	import skorokhod.skorokhod;
 	mixin skorokhodHelperRT!Var;
 
-	// set properties of the description
-	threeDesc.field("one").as!ArrayVar.collapsed = true;
-	threeDesc.field("two").as!ArrayVar.elements[0].as!AggregateVar.field("one").as!AggregateVar.collapsed = true;
+	// // set properties of the description
+	// threeDesc.field("one").as!ArrayVar.collapsed = true;
+	// threeDesc.field("two").as!ArrayVar.elements[0].as!AggregateVar.field("one").as!AggregateVar.collapsed = true;
 	auto r = rangeOver(threeDesc);
+
+	int[][] path_etalon = [
+		[0],          //  0 three
+		[0, 0],       //  1   sh
+		[0, 1],       //  2   ub
+		[0, 1, 0],    //  3     ub[0]
+		[0, 1, 1],    //  4     ub[1]
+		[0, 2],       //  5   one
+		[0, 2, 0],    //  6     OneT
+		[0, 2, 0, 0], //  7       str
+		[0, 2, 0, 1], //  8       i
+		[0, 2, 1],    //  9     OneT
+		[0, 2, 1, 0], // 10       str
+		[0, 2, 1, 1], // 11       i
+		[0, 2, 2],    // 12     OneT
+		[0, 2, 2, 0], // 13       str
+		[0, 2, 2, 1], // 14       i
+		[0, 3],       // 15   two
+		[0, 3, 0],    // 16     TwoT
+		[0, 3, 0, 0], // 17       f
+		[0, 3, 0, 1], // 18       one
+		[0, 3, 0, 2], // 19       d
+	];
+
+	int[][] path_result;
 
 	// traverse the description
 	{
 		import std.algorithm : each, map;
 		import std.stdio : writeln;
+		import std.array : array;
+
 		auto w = skipper(r);
 		auto toString = (Var v) {
 			import std : text, repeat;
@@ -108,9 +135,24 @@ unittest
 			auto sn = v.name;
 			if (sn == "")
 				sn = v.type.name;
-			return text(prefix, sn);
+			path_result ~= r.path.value[].array;
+			return text(r.path, prefix, sn);
 		};
 		w.map!toString.each!writeln;
+		r.path.writeln;
+		// path_result.each!writeln;
+	}
+
+	import std : writeln, lockstep;
+	size_t i;
+	foreach(lhs, rhs; lockstep(path_etalon, path_result))
+	{
+		if (lhs != rhs)
+		{
+			writeln(i, ": expected ", lhs, "\n", i, ":      got ", rhs);
+			assert(0);
+		}
+		i++;
 	}
 }
 
