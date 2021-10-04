@@ -23,6 +23,7 @@ template Skorokhod(Reference)
 
 		Record[] stack;
 		TreePath path;
+		private bool _empty;
 
 		@disable this();
 		@disable this(this);
@@ -87,7 +88,7 @@ template Skorokhod(Reference)
 		void skip()
 		{
 			stack[$-1].idx = stack[$-1].total-1;
-			while(!empty && !inProgress)
+			if (!inProgress && nestingLevel > 1)
 				pop;
 		}
 
@@ -95,7 +96,7 @@ template Skorokhod(Reference)
 
 		bool empty() const
 		{
-			return stack.length == 0;
+			return _empty || stack.length == 0;
 		}
 
 		auto front()
@@ -112,25 +113,48 @@ template Skorokhod(Reference)
 
 		void popFront() @trusted
 		{
-			// Clear the stack from records where
-			// all children has been visited
-			scope(exit)
+			if (isParent(front))
+			// the current node is non list node
 			{
-				while(!empty && !inProgress)
-					pop;
+				
+				if (childrenCount(front))
+				{
+					// level down
+					push;
+				}
+				else
+					goto nochildren;
 			}
+			else
+			// the current node is the list
+			{
+				nochildren:
+				nextnodeexist:
+				// there is at least one another node at the current level
+				if (idx+1 < total)
+				{
+					// go to the next node at the current level
+					nextChild;
+				}
+				else
+				// there is no other node at the current level
+				{
 
-			if (nestingLevel == 1 || (isParent(front) && total))
-			{
-				push;
-				assert(idx == 0);
-				// in grand parent record go to the next child
-				// (i.e. go to the next parent) 
-				stack[$-2].idx++;
-				return;
+					if (nestingLevel > 1)
+					{
+						// level up
+						pop;
+						goto nextnodeexist;
+					}
+					else
+					{
+						// the current node is the last one in the current level
+						// the parent of the current node is the root of the tree
+						// nothing to do, finish
+						_empty = true;
+					}
+				}
 			}
-			assert(!empty);
-			nextChild;
 		}
 	}
 
