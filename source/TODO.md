@@ -2,7 +2,7 @@
 [ ] Test for skip + twin iteration
 [x] Skipping of root children
 [ ] Add direction
-[ ] Fix empty method
+[x] Fix empty method
 [x] Fix path enumerating
 [ ] Test for non parent root
 [ ] Go to element by its tree path
