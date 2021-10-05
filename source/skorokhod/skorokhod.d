@@ -31,14 +31,23 @@ template Skorokhod(Reference)
 
 		this(Reference reference)
 		{
-			stack ~= Record(0, 1, reference);
-			path.put(0);
+			set(reference);
 		}
 
 		this(ref return scope RangeOver rhs)
 		{
 			stack = rhs.stack.dup;
 			path  = rhs.path;
+		}
+
+		void set(Reference reference)
+		{
+			stack = null;
+			path = TreePath();
+			_empty = false;
+
+			stack ~= Record(0, 1, reference);
+			path.put(0);
 		}
 
 		private void push()
