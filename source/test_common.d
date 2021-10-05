@@ -4,9 +4,24 @@ auto toString(E)(E e)
 {
 	import std : text, repeat, max;
 	enum minWidth = 16;
-	auto prefix = ' '.repeat(max(minWidth, 2*(e.nestingLevel-1)));
+    static if (is(typeof(e.nestingLevel)))
+	    auto prefix = ' '.repeat(max(minWidth, 2*(e.nestingLevel-1)));
+    else
+        string prefix;
+    static if (is(typeof(e.path.value[])))
+        auto path = e.path.value[];
+    else
+        string path;
 	auto sn = e.name.length ? e.name : e.type.name;
-	return text(e.path.value[], prefix, sn);
+	return text(path, prefix, sn);
+}
+
+auto toPath(E)(E e)
+{
+    static if (is(typeof(e.path.value)))
+        return e.path.value;
+    else
+        return "";
 }
 
 bool equal(S, E)(S sample, E etalon)

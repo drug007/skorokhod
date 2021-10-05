@@ -111,11 +111,11 @@ unittest
 	import std.stdio : writeln;
 	import skorokhod.skorokhod;
 
-	mixin skorokhodHelperRT!Var;
+	mixin skorokhodHelperRT!(Var, false);
 
 	auto r = rangeOver(threeDesc);
 	version(none) r.map!toString.each!writeln;
-	assert(r.map!"a.path.value".equal(path_etalon));
+	assert(r.map!toPath.equal(path_etalon));
 }
 
 @("rt_skip")
@@ -125,9 +125,9 @@ unittest
 	import std.stdio : writeln;
 	import skorokhod.skorokhod;
 
-	mixin skorokhodHelperRT!Var;
+	mixin skorokhodHelperRT!(Var, false);
 
 	auto r = rangeOver(threeDesc);
 	version(none) r.map!toString.each!writeln;
-	assert(r.map!"a.path.value".equal(path_etalon));
+	assert(r.map!toPath.equal(path_etalon));
 }

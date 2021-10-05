@@ -1,6 +1,6 @@
 module skorokhod.skorokhod;
 
-template Skorokhod(Reference)
+template Skorokhod(Reference, bool NoDebug = true)
 {
 	import auxil.treepath : TreePath;
 	import skorokhod.model;
@@ -124,11 +124,20 @@ template Skorokhod(Reference)
 			enforce(!empty);
 
 			if (nestingLevel == 1)
-				return Element(stack[$-1].reference, path);
+			{
+				static if (NoDebug)
+					return stack[$-1].reference;
+				else
+					return Element(stack[$-1].reference, path);
+			}
 
 			assert(isParent(stack[$-1].reference));
 			assert(total);
-			return Element(cbi(stack[$-1].reference, idx), path);
+
+			static if (NoDebug)
+				return cbi(stack[$-1].reference, idx);
+			else
+				return Element(cbi(stack[$-1].reference, idx), path);
 		}
 
 		void popFront() @trusted
@@ -416,12 +425,12 @@ mixin template skorokhodHelperCT(T)
 	}
 }
 
-mixin template skorokhodHelperRT(T)
+mixin template skorokhodHelperRT(T, bool NoDebug = true)
 {
 	import taggedalgebraic : TaggedAlgebraic;
 
 	alias Reference = T;
-	alias RT        = Skorokhod!Reference;
+	alias RT        = Skorokhod!(Reference, NoDebug);
 	alias rangeOver = RT.rangeOver;
 	alias isParent  = RT.isParent;
 	alias childrenCount = RT.childrenCount;
