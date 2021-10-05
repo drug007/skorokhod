@@ -3,7 +3,7 @@
 [ ] Skipping of root children
 [ ] Add direction
 [ ] Fix empty method
-[ ] Fix path enumerating
+[x] Fix path enumerating
 [ ] Test for non parent root
 [ ] Go to element by its tree path
 [x] Replace loop over ranges by another range
