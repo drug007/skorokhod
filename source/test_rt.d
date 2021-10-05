@@ -12,6 +12,8 @@ AggregateVar threeDesc;
 
 Node[] etalon;
 
+int[][] path_etalon;
+
 static this()
 {
 	Short  = new Type("short");
@@ -73,31 +75,8 @@ static this()
 		new ScalarVar("str", String),
 		new ScalarVar("d", Double),
 	];
-}
 
-@("Description")
-unittest
-{
-	import skorokhod.skorokhod;
-	mixin skorokhodHelperRT!Node;
-
-	auto r = rangeOver(threeDesc);
-	version(none) print(r);
-	assert(r.equal(etalon));
-}
-
-@("rt_skip")
-unittest
-{
-	import skorokhod.skorokhod;
-	mixin skorokhodHelperRT!Var;
-
-	// // set properties of the description
-	// threeDesc.field("one").as!ArrayVar.collapsed = true;
-	// threeDesc.field("two").as!ArrayVar.elements[0].as!AggregateVar.field("one").as!AggregateVar.collapsed = true;
-	auto r = rangeOver(threeDesc);
-
-	int[][] path_etalon = [
+	path_etalon = [
 		[0],             //  0 three
 		[0, 0],          //  1   sh
 		[0, 1],          //  2   ub
@@ -122,44 +101,53 @@ unittest
 		[0, 3, 0, 2],    // 21       str
 		[0, 3, 0, 3],    // 22       d
 	];
+}
 
-	int[][] path_result;
+@("Description")
+unittest
+{
+	import std : writeln, map, each, array;
+	import skorokhod.skorokhod;
+
+	mixin skorokhodHelperRT!Var;
+
+	auto r = rangeOver(threeDesc);
+	version(all) r.map!toString.each!writeln;
+	assert(r.map!"a.path.value".equal(path_etalon));
+}
+
+@("rt_skip")
+unittest
+{
+	import std.algorithm : each, map;
+	import std.stdio : writeln;
+	import std.array : array;
+	import std.range : lockstep;
+
+	import skorokhod.skorokhod;
+	mixin skorokhodHelperRT!Var;
+
+	auto r = rangeOver(threeDesc);
 
 	// traverse the description
 	{
-		import std.algorithm : each, map;
-		import std.stdio : writeln;
-		import std.array : array;
+		r = rangeOver(threeDesc);
+		r.skipper.print;
 
-		auto w = skipper(r);
-		auto toString = (Var v) {
-			import std : text, repeat;
-			auto prefix = ' '.repeat(2*(w.nestingLevel-1));
-			auto sn = v.name;
-			if (sn == "")
-				sn = v.type.name;
-			path_result ~= r.path.value[].array;
-			return text(r.path, prefix, sn);
-		};
-		w.map!toString.each!writeln;
-		// r.path.writeln;
-		path_result.each!writeln;
+		r = rangeOver(threeDesc);
+		int[][] path_result;
+		r.skipper.each!(a=>path_result ~= r.path.value[].array);
+		assert(path_etalon.equal(path_result));
 	}
+}
 
-	import std : writeln, lockstep;
-	size_t i;
-	writeln(path_etalon.length);
-	writeln(path_result.length);
-	assert(path_etalon.length == path_result.length);
-	foreach(lhs, rhs; lockstep(path_etalon, path_result))
-	{
-		if (lhs != rhs)
-		{
-			writeln(i, ": expected ", lhs, "\n", i, ":      got ", rhs);
-			assert(0);
-		}
-		i++;
-	}
+auto toString(E)(E e)
+{
+	import std : text, repeat, max;
+	enum minWidth = 16;
+	auto prefix = ' '.repeat(max(minWidth, 2*(e.nestingLevel-1)));
+	auto sn = e.name.length ? e.name : e.type.name;
+	return text(e.path.value[], prefix, sn);
 }
 
 auto print(R)(R r)
@@ -193,7 +181,7 @@ bool equal(S, E)(S sample, E etalon)
 	{
 		if (sample.front != etalon[0])
 		{
-			stderr.writeln(i, ": ", sample.front.name, "\n", i, ": ", etalon.front.name);
+			stderr.writeln(i, ": ", sample.front, "\n", i, ": ", etalon.front);
 			return false;
 		}
 		sample.popFront;

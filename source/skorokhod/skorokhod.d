@@ -2,12 +2,31 @@ module skorokhod.skorokhod;
 
 template Skorokhod(Reference)
 {
+	import auxil.treepath : TreePath;
 	import skorokhod.model;
 
 	private struct Record
 	{
 		size_t idx, total;
 		Reference reference;
+	}
+
+	private struct Element
+	{
+		Reference reference;
+		TreePath path;
+
+		auto nestingLevel() const
+		{
+			return path.value.length+1;
+		}
+
+		alias reference this;
+
+		auto toHash() const
+		{
+			return typeid(this).getHash(&this);
+		}
 	}
 
 	// allows to iterate over T members (or their subset
@@ -17,7 +36,6 @@ template Skorokhod(Reference)
 	struct RangeOver
 	{
 		import std.exception : enforce;
-		import auxil.treepath : TreePath;
 
 		@safe:
 
@@ -106,11 +124,11 @@ template Skorokhod(Reference)
 			enforce(!empty);
 
 			if (nestingLevel == 1)
-				return stack[$-1].reference;
+				return Element(stack[$-1].reference, path);
 
 			assert(isParent(stack[$-1].reference));
 			assert(total);
-			return cbi(stack[$-1].reference, idx);
+			return Element(cbi(stack[$-1].reference, idx), path);
 		}
 
 		void popFront() @trusted
