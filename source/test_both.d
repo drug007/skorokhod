@@ -11,7 +11,7 @@ unittest
 	import skorokhod.skorokhod;
 	import skorokhod.description;
 
-	import test_ct, test_rt;
+	import test_ct, test_rt, test_common;
 
 	mixin skorokhodHelperRT!Var;
 	mixin skorokhodHelperCT!(Three);
@@ -29,16 +29,8 @@ unittest
 	{
 		import std.algorithm : each, map;
 		import std.stdio : writeln;
+		import std.conv : text;
 
-		auto s = skipper(rtr, ctr);
-		auto toString = (s.Payload t) {
-			import std : text, repeat;
-			auto prefix = ' '.repeat(2*(s.nestingLevel-1));
-			auto m = t[0];
-			auto s = t[1];
-			auto mtext = m.name == "" ? m.type.name : m.name;
-			return text(prefix, mtext, " ", *s);
-		};
-		s.map!toString.each!writeln;
+		skipper(rtr, ctr).map!(t=>text(toString(t[0]), "  ",  *t[1])).each!writeln;
 	}
 }

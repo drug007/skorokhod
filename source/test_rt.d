@@ -5,6 +5,7 @@ module test_rt;
 ************************************/
 
 import skorokhod.description;
+import test_common;
 	
 Type Float, Ubyte, String, Int, Double, Short;
 AggregateType OneT, TwoT, ThreeT;
@@ -106,7 +107,8 @@ static this()
 @("Description")
 unittest
 {
-	import std : writeln, map, each, array;
+	import std.algorithm : each, map;
+	import std.stdio : writeln;
 	import skorokhod.skorokhod;
 
 	mixin skorokhodHelperRT!Var;
@@ -121,69 +123,11 @@ unittest
 {
 	import std.algorithm : each, map;
 	import std.stdio : writeln;
-	import std.array : array;
-	import std.range : lockstep;
-
 	import skorokhod.skorokhod;
+
 	mixin skorokhodHelperRT!Var;
 
 	auto r = rangeOver(threeDesc);
-
-	version(none)
-	{
-		r.skipper.print;
-		r = rangeOver(threeDesc);
-	}
-
+	version(none) r.map!toString.each!writeln;
 	assert(r.map!"a.path.value".equal(path_etalon));
-}
-
-auto toString(E)(E e)
-{
-	import std : text, repeat, max;
-	enum minWidth = 16;
-	auto prefix = ' '.repeat(max(minWidth, 2*(e.nestingLevel-1)));
-	auto sn = e.name.length ? e.name : e.type.name;
-	return text(e.path.value[], prefix, sn);
-}
-
-auto print(R)(R r)
-{
-	import std : writeln, repeat;
-	import std.range : front, popFront, empty;
-
-	while(!r.empty)
-	{
-		auto prefix = ' '.repeat(2*(r.nestingLevel-1));
-		auto sn = r.front.name;
-		if (sn == "")
-			sn = r.front.type.name;
-		writeln(prefix, sn);
-		r.popFront;
-	}
-}
-
-bool equal(S, E)(S sample, E etalon)
-{
-	import std.range : front, popFront, empty, walkLength;
-	import std.stdio : stderr;
-
-	if (sample.walkLength != etalon.walkLength)
-	{
-		stderr.writeln("sample length: ", sample.walkLength, "\n", "etalon length: ", etalon.walkLength);
-		return false;
-	}
-
-	foreach(i; 0..etalon.length)
-	{
-		if (sample.front != etalon[0])
-		{
-			stderr.writeln(i, ": ", sample.front, "\n", i, ": ", etalon.front);
-			return false;
-		}
-		sample.popFront;
-		etalon.popFront;
-	}
-
-	return true;
 }
