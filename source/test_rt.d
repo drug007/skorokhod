@@ -112,7 +112,7 @@ unittest
 	mixin skorokhodHelperRT!Var;
 
 	auto r = rangeOver(threeDesc);
-	version(all) r.map!toString.each!writeln;
+	version(none) r.map!toString.each!writeln;
 	assert(r.map!"a.path.value".equal(path_etalon));
 }
 
@@ -129,16 +129,13 @@ unittest
 
 	auto r = rangeOver(threeDesc);
 
-	// traverse the description
+	version(none)
 	{
-		r = rangeOver(threeDesc);
 		r.skipper.print;
-
 		r = rangeOver(threeDesc);
-		int[][] path_result;
-		r.skipper.each!(a=>path_result ~= r.path.value[].array);
-		assert(path_etalon.equal(path_result));
 	}
+
+	assert(r.map!"a.path.value".equal(path_etalon));
 }
 
 auto toString(E)(E e)
