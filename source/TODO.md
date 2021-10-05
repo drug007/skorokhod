@@ -13,3 +13,4 @@
 [ ] Integrate with nanogui
 [ ] Create description in compile time
 [ ] Support for all types rdpl.Message consists of
+[ ] Access to nodes and their properties is very-very bug prone
