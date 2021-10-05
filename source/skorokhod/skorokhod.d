@@ -41,7 +41,6 @@ template Skorokhod(Reference, bool NoDebug = true)
 
 		Record[] stack;
 		TreePath path;
-		private bool _empty;
 
 		@disable this();
 		@disable this(this);
@@ -55,16 +54,16 @@ template Skorokhod(Reference, bool NoDebug = true)
 		{
 			stack = null;
 			path = TreePath();
-			_empty = false;
 
-			stack ~= Record(0, 1, reference);
+			stack ~= Record(0, childrenCount(reference), reference);
 			path.put(0);
 		}
 
 		private void push()
 		{
-			stack ~= Record(0, childrenCount(front), front);
-			path.put(cast(int) idx);
+			auto child = cbi(front, idx);
+			stack ~= Record(0, childrenCount(child), child);
+			path.put(0);
 		}
 
 		private void pop()
@@ -85,18 +84,16 @@ template Skorokhod(Reference, bool NoDebug = true)
 			enforce(!empty);
 			return stack[$-1].total;
 		}
-
 		private bool inProgress() const
 		{
 			enforce(!empty);
 			return stack[$-1].idx < stack[$-1].total;
 		}
 
-		private void nextChild()
+		private void nextSiblings()
 		{
 			enforce(inProgress);
 			stack[$-1].idx++;
-			path.back = cast(int) idx;
 		}
 
 		size_t nestingLevel() const
@@ -107,82 +104,76 @@ template Skorokhod(Reference, bool NoDebug = true)
 		// skip the current level and levels below the current
 		void skip()
 		{
-			stack[$-1].idx = stack[$-1].total-1;
-			if (!inProgress && nestingLevel > 1)
+			assert(!empty);
+			if (stack.length < 2)
+			{
+				stack = null;
+				return;
+			}
+
+			pop;
+			while(!empty)
+			{
+				if (inProgress)
+				{
+					nextSiblings;
+					// traversal is not being in progress 
+					// means we iterate over all children ot
+					// the current node and should pop it
+					if (inProgress)
+						break;
+				}
 				pop;
+			}
 		}
 
 		// InputRange interface
 
 		bool empty() const
 		{
-			return _empty || stack.length == 0;
+			return stack.length == 0;
 		}
 
 		auto front()
 		{
 			enforce(!empty);
 
-			if (nestingLevel == 1)
-			{
-				static if (NoDebug)
-					return stack[$-1].reference;
-				else
-					return Element(stack[$-1].reference, path);
-			}
-
-			assert(isParent(stack[$-1].reference));
-			assert(total);
-
 			static if (NoDebug)
-				return cbi(stack[$-1].reference, idx);
+				return stack[$-1].reference;
 			else
-				return Element(cbi(stack[$-1].reference, idx), path);
+				return Element(stack[$-1].reference, path);
 		}
 
 		void popFront() @trusted
 		{
-			if (isParent(front))
-			// the current node is non list node
+			while(!empty)
 			{
-				
-				if (childrenCount(front))
+				if(isParent(front) && inProgress)
 				{
-					// level down
 					push;
+					break;
 				}
-				else
-					goto nochildren;
+				pop;
+				if (empty)
+					return;
+				if (inProgress)
+					nextSiblings;
 			}
-			else
-			// the current node is the list
-			{
-				nochildren:
-				nextnodeexist:
-				// there is at least one another node at the current level
-				if (idx+1 < total)
-				{
-					// go to the next node at the current level
-					nextChild;
-				}
-				else
-				// there is no other node at the current level
-				{
 
-					if (nestingLevel > 1)
-					{
-						// level up
-						pop;
-						goto nextnodeexist;
-					}
-					else
-					{
-						// the current node is the last one in the current level
-						// the parent of the current node is the root of the tree
-						// nothing to do, finish
-						_empty = true;
-					}
-				}
+			// set the current path
+			switch (stack.length)
+			{
+			default:
+				// take the index from the parent
+				path.back = cast(int) stack[$-2].idx;
+				break;
+			case 0:
+				assert(0); // this case should has been processed above
+			case 1:
+				// the root has no explicit parent but if it would have
+				// then the root has 0 index
+				path.back = 0;
+				break;
 			}
 		}
 	}

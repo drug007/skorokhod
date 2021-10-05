@@ -126,8 +126,13 @@ unittest
 	import skorokhod.skorokhod;
 
 	mixin skorokhodHelperRT!(Var, false);
+	
+	// set properties of the description
+	// (we can change these properties on the fly)
+	threeDesc.field("two").as!ArrayVar.collapsed = true;
 
 	auto r = rangeOver(threeDesc);
-	version(none) r.map!toString.each!writeln;
-	assert(r.map!toPath.equal(path_etalon));
+	version(none) r.skipper.map!toString.each!writeln;
+	r = rangeOver(threeDesc);
+	assert(r.skipper.map!toPath.equal(path_etalon[0..16]));
 }
