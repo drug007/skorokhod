@@ -1,6 +1,6 @@
 [x] Skip + twin iteration
 [ ] Test for skip + twin iteration
-[ ] Skipping of root children
+[x] Skipping of root children
 [ ] Add direction
 [ ] Fix empty method
 [x] Fix path enumerating

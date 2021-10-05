@@ -136,3 +136,22 @@ unittest
 	r = rangeOver(threeDesc);
 	assert(r.skipper.map!toPath.equal(path_etalon[0..16]));
 }
+
+@("rt_skip_root_children")
+unittest
+{
+	import std.algorithm : each, map;
+	import std.stdio : writeln;
+	import skorokhod.skorokhod;
+
+	mixin skorokhodHelperRT!(Var, false);
+	
+	// set properties of the description
+	// (we can change these properties on the fly)
+	threeDesc.as!AggregateVar.collapsed = true;
+
+	auto r = rangeOver(threeDesc);
+	version(none) r.skipper.map!toString.each!writeln;
+	r = rangeOver(threeDesc);
+	assert(r.skipper.map!toPath.equal(path_etalon[0..1]));
+}
