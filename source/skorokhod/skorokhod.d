@@ -27,17 +27,10 @@ template Skorokhod(Reference)
 
 		@disable this();
 		@disable this(this);
-		@disable this(ref return scope const RangeOver rhs);
 
 		this(Reference reference)
 		{
 			set(reference);
-		}
-
-		this(ref return scope RangeOver rhs)
-		{
-			stack = rhs.stack.dup;
-			path  = rhs.path;
 		}
 
 		void set(Reference reference)
