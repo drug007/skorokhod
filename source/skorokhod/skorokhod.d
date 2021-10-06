@@ -151,6 +151,7 @@ template Skorokhod(Reference, bool NoDebug = true)
 				if(isParent(front) && inProgress)
 				{
 					push;
+					assert(!empty && (!isParent(front) || inProgress || stack[$-1].total == 0));
 					break;
 				}
 				pop;
