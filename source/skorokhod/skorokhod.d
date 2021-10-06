@@ -41,6 +41,9 @@ template Skorokhod(Reference, bool NoDebug = true)
 
 		Record[] stack;
 		TreePath path;
+		// true if we have reached 
+		// the last element of the tree
+		bool _inLastElement;
 
 		@disable this();
 		@disable this(this);
@@ -61,7 +64,7 @@ template Skorokhod(Reference, bool NoDebug = true)
 
 		private void push()
 		{
-			auto child = cbi(front, idx);
+			auto child = cbi(front, stack[$-1].idx);
 			stack ~= Record(0, childrenCount(child), child);
 			path.put(0);
 		}
@@ -73,17 +76,6 @@ template Skorokhod(Reference, bool NoDebug = true)
 			path.popBack;
 		}
 
-		private auto idx() const
-		{
-			enforce(!empty);
-			return stack[$-1].idx;
-		}
-
-		private auto total() const
-		{
-			enforce(!empty);
-			return stack[$-1].total;
-		}
 		private bool inProgress() const
 		{
 			enforce(!empty);
@@ -131,7 +123,7 @@ template Skorokhod(Reference, bool NoDebug = true)
 
 		bool empty() const
 		{
-			return stack.length == 0;
+			return _inLastElement || stack.length == 0;
 		}
 
 		auto front()
@@ -146,6 +138,8 @@ template Skorokhod(Reference, bool NoDebug = true)
 
 		void popFront() @trusted
 		{
+			assert(!_inLastElement);
+
 			while(!empty)
 			{
 				if(isParent(front) && inProgress)
@@ -154,11 +148,36 @@ template Skorokhod(Reference, bool NoDebug = true)
 					assert(!empty && (!isParent(front) || inProgress || stack[$-1].total == 0));
 					break;
 				}
-				pop;
-				if (empty)
-					return;
-				if (inProgress)
-					nextSiblings;
+
+				// check if we have reached the last list of the tree
+				{
+					size_t c;
+					foreach_reverse(e; stack)
+					{
+						if (e.idx+1 >= e.total)
+							c++;
+						else
+							break;
+					}
+
+					if (c == stack.length)
+					{
+						_inLastElement = true;
+						return;
+					}
+
+					// drop fully visited parents
+					foreach(i; 0..c)
+						pop;
+				}
+
+				// make up invariant
+				{
+					if (empty)
+						return;
+					if (inProgress)
+						nextSiblings;
+				}
 			}
 
 			// set the current path
