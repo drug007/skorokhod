@@ -5,9 +5,30 @@ template Skorokhod(Reference, bool NoDebug = true)
 	import auxil.treepath : TreePath;
 	import skorokhod.model;
 
+	private struct ChildRange
+	{
+		size_t begin, end;
+
+		bool empty() const
+		{
+			return begin >= end;
+		}
+
+		size_t front() const
+		{
+			return begin;
+		}
+
+		void popFront()
+		{
+			assert(!empty);
+			begin++;
+		}
+	}
+
 	private struct Record
 	{
-		size_t idx, total;
+		ChildRange children;
 		Reference reference;
 	}
 
@@ -36,6 +57,7 @@ template Skorokhod(Reference, bool NoDebug = true)
 	struct RangeOver
 	{
 		import std.exception : enforce;
+		import std.array : popBack;
 
 		@safe:
 
@@ -58,34 +80,58 @@ template Skorokhod(Reference, bool NoDebug = true)
 			stack = null;
 			path = TreePath();
 
-			stack ~= Record(0, childrenCount(reference), reference);
+			stack ~= Record(ChildRange(0, childrenCount(reference)), reference);
 			path.put(0);
 		}
 
 		private void push()
 		{
-			auto child = cbi(front, stack[$-1].idx);
-			stack ~= Record(0, childrenCount(child), child);
-			path.put(0);
+			auto i = cast(int) top.children.front;
+			auto child = cbi(front, i);
+			stack ~= Record(ChildRange(0, childrenCount(child)), child);
+			path.put(i);
 		}
 
 		private void pop()
 		{
 			enforce(!empty);
-			stack = stack[0..$-1];
+			stack.popBack;
 			path.popBack;
 		}
 
 		private bool inProgress() const
 		{
 			enforce(!empty);
-			return stack[$-1].idx < stack[$-1].total;
+			return !top.children.empty;
 		}
 
-		private void nextSiblings()
+		private void nextSibling()
 		{
-			enforce(inProgress);
-			stack[$-1].idx++;
+			// go to the next sibling
+			top.children.popFront;
+			// if there is no next subling
+			while(top.children.empty)
+			{
+				// try to level up to the parent
+				pop;
+				// get out of here if there is no any parent
+				if (empty)
+					return;
+				// go to the next sibling
+				top.children.popFront;
+			}
+
+			assert(!empty);
+
+			// if there is available sibling
+			// make it the current node
+			if (!top.children.empty)
+				push;
+		}
+
+		private ref auto top() inout
+		{
+			return stack[$-1];
 		}
 
 		size_t nestingLevel() const
@@ -104,19 +150,8 @@ template Skorokhod(Reference, bool NoDebug = true)
 			}
 
 			pop;
-			while(!empty)
-			{
-				if (inProgress)
-				{
-					nextSiblings;
-					// traversal is not being in progress 
-					// means we iterate over all children ot
-					// the current node and should pop it
-					if (inProgress)
-						break;
-				}
-				pop;
-			}
+			if (!empty)
+				nextSibling;
 		}
 
 		// InputRange interface
@@ -140,61 +175,15 @@ template Skorokhod(Reference, bool NoDebug = true)
 		{
 			assert(!_inLastElement);
 
-			while(!empty)
+			if(isParent(front) && inProgress)
 			{
-				if(isParent(front) && inProgress)
-				{
-					push;
-					assert(!empty && (!isParent(front) || inProgress || stack[$-1].total == 0));
-					break;
-				}
-
-				// check if we have reached the last list of the tree
-				{
-					size_t c;
-					foreach_reverse(e; stack)
-					{
-						if (e.idx+1 >= e.total)
-							c++;
-						else
-							break;
-					}
-
-					if (c == stack.length)
-					{
-						_inLastElement = true;
-						return;
-					}
-
-					// drop fully visited parents
-					foreach(i; 0..c)
-						pop;
-				}
-
-				// make up invariant
-				{
-					if (empty)
-						return;
-					if (inProgress)
-						nextSiblings;
-				}
+				push;
+				return;
 			}
 
-			// set the current path
-			switch (stack.length)
-			{
-			default:
-				// take the index from the parent
-				path.back = cast(int) stack[$-2].idx;
-				break;
-			case 0:
-				assert(0); // this case should has been processed above
-			case 1:
-				// the root has no explicit parent but if it would have
-				// then the root has 0 index
-				path.back = 0;
-				break;
-			}
+			pop;
+			if (!empty)
+				nextSibling;
 		}
 	}
 
