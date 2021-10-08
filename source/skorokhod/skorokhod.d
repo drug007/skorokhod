@@ -5,23 +5,33 @@ template Skorokhod(Reference, bool NoDebug = true)
 	import auxil.treepath : TreePath;
 	import skorokhod.model;
 
+	// Children are enumerated from 1
 	private struct ChildRange
 	{
 		size_t begin, end;
 
+		@disable this();
+
+		this(size_t b, size_t count)
+		{
+			assert(!count || b < count);
+			begin = b+1;
+			end = count;
+		}
+
 		bool empty() const
 		{
-			return begin >= end;
+			return begin > end;
 		}
 
 		bool nextEmpty() const
 		{
-			return begin+1 >= end;
+			return begin+1 > end;
 		}
 
 		size_t front() const
 		{
-			return begin;
+			return begin-1;
 		}
 
 		void popFront()
