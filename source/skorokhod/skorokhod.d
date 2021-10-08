@@ -14,6 +14,11 @@ template Skorokhod(Reference, bool NoDebug = true)
 			return begin >= end;
 		}
 
+		bool nextEmpty() const
+		{
+			return begin+1 >= end;
+		}
+
 		size_t front() const
 		{
 			return begin;
@@ -89,14 +94,16 @@ template Skorokhod(Reference, bool NoDebug = true)
 			auto i = cast(int) top.children.front;
 			auto child = cbi(front, i);
 			stack ~= Record(ChildRange(0, childrenCount(child)), child);
-			path.put(i);
+			if (path.value.length < stack.length)
+				path.put(i);
+			else
+				path.value[stack.length-1] = i;
 		}
 
 		private void pop()
 		{
 			enforce(!empty);
 			stack.popBack;
-			path.popBack;
 		}
 
 		private bool inProgress() const
@@ -109,6 +116,41 @@ template Skorokhod(Reference, bool NoDebug = true)
 		{
 			// go to the next sibling
 			top.children.popFront;
+
+			// counter of parents whose have visited all their children
+			size_t cnt = 0;
+			// true if all parents of the current node
+			// have visited all their children
+			// i.e. the tree has been fully traversed
+			bool fullyTraversed;
+
+			scope(success)
+			{
+				// on successful exit we fix the current
+				// length of the path (remove excess elements)
+				if (!fullyTraversed)
+				{
+					while(path.value.length > stack.length)
+						path.popBack;
+				}
+			}
+
+			if (top.children.empty)
+			{
+				// if the current list is the last list of its parent
+				// then we count total number of other grand parents
+				cnt++;
+				while(cnt < stack.length && stack[$-cnt-1].children.nextEmpty)
+				{
+					cnt++;
+				}
+
+				// if the current list is the last one of all grand parents
+				// set the flag
+				if (cnt == stack.length)
+					fullyTraversed = true;
+			}
+
 			// if there is no next subling
 			while(top.children.empty)
 			{

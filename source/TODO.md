@@ -14,4 +14,4 @@
 [ ] Create description in compile time
 [ ] Support for all types rdpl.Message consists of
 [ ] Access to nodes and their properties is very-very bug prone
-[_] Stay in the last position
+[x] Stay in the last position
