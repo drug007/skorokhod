@@ -101,13 +101,13 @@ template Skorokhod(Reference, bool NoDebug = true)
 
 		private void push()
 		{
-			auto i = cast(int) top.children.front;
-			auto child = cbi(front, i);
+			auto curr_child_idx = cast(int) top.children.front;
+			auto child = cbi(front, curr_child_idx);
 			stack ~= Record(ChildRange(0, childrenCount(child)), child);
 			if (path.value.length < stack.length)
-				path.put(i);
+				path.put(curr_child_idx);
 			else
-				path.value[stack.length-1] = i;
+				path.value[stack.length-1] = curr_child_idx;
 		}
 
 		private void pop()
