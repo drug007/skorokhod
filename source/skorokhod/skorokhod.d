@@ -288,6 +288,11 @@ template Skorokhod(Reference, bool NoDebug = true)
 		private void popFrontForward()
 		{
 			assert(!empty);
+			scope(exit)
+			{
+				while(stack.length && path.value.length > stack.length)
+					path.popBack;
+			}
 			while(true)
 			{
 				if (!current.children.empty)

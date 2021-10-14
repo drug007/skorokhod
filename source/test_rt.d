@@ -120,27 +120,9 @@ unittest
 	foreach(_; 0..5)
 		r.popFront;
 
-	assert(r.front.name == "one");
-	assert(r.path.value[] == [0, 2]);
-
-	r.setBackwardDirection;
-	writeln(r.front.name, " ", r.path);
-	r.popFront;
-	writeln(r.front.name, " ", r.path);
-	r.popFront;
-	writeln(r.front.name, " ", r.path);
-	r.popFront;
-	writeln(r.front.name, " ", r.path);
-	// r.popFront;
-	// writeln(r.empty);
-	// assert(r.empty);
-	r.setForwardDirection;
-
 	while(!r.empty)
 		r.popFront;
 
-writeln(r.direction);
-writeln(r.path.value[]);
 	assert(r.path.value[] == [0, 3, 0, 3]);
 	assert(r.empty);
 }
