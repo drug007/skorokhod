@@ -5,28 +5,44 @@ template Skorokhod(Reference, bool NoDebug = true)
 	import auxil.treepath : TreePath;
 	import skorokhod.model;
 
-	// Children are enumerated from 1
+	enum Direction { forward = 1, backward = -1 }
+
 	private struct ChildRange
 	{
 		size_t begin, end;
+		Direction direction;
 
 		@disable this();
 
-		this(size_t b, size_t count)
+		this(Direction d, size_t count)
 		{
-			assert(!count || b < count);
-			begin = b+1;
+			direction = d;
+			// the first index in case of forward direction and
+			// the last one in other case
+			begin = (direction == Direction.forward) ? 1 : count;
 			end = count;
 		}
 
-		bool empty() const
+		private bool checkEmtpiness(size_t value) const
 		{
-			return begin > end;
+			// our interval is [1, end]
+			final switch(direction)
+			{
+				case Direction.forward:
+					return value > end;
+				case Direction.backward:
+					return value < 1;
+			}
 		}
 
 		bool nextEmpty() const
 		{
-			return begin+1 > end;
+			return checkEmtpiness(begin + direction);
+		}
+
+		bool empty() const
+		{
+			return checkEmtpiness(begin);
 		}
 
 		size_t front() const
@@ -34,10 +50,10 @@ template Skorokhod(Reference, bool NoDebug = true)
 			return begin-1;
 		}
 
-		void popFront()
+		void next()
 		{
 			assert(!empty);
-			begin++;
+			begin += direction;
 		}
 	}
 
@@ -78,6 +94,7 @@ template Skorokhod(Reference, bool NoDebug = true)
 
 		Record[] stack;
 		TreePath path;
+		Direction direction;
 		// true if we have reached 
 		// the last element of the tree
 		bool _inLastElement;
@@ -94,8 +111,9 @@ template Skorokhod(Reference, bool NoDebug = true)
 		{
 			stack = null;
 			path = TreePath();
+			direction = Direction.forward;
 
-			stack ~= Record(ChildRange(0, childrenCount(reference)), reference);
+			stack ~= Record(ChildRange(direction, childrenCount(reference)), reference);
 			path.put(0);
 		}
 
@@ -103,7 +121,7 @@ template Skorokhod(Reference, bool NoDebug = true)
 		{
 			auto curr_child_idx = cast(int) top.children.front;
 			auto child = cbi(front, curr_child_idx);
-			stack ~= Record(ChildRange(0, childrenCount(child)), child);
+			stack ~= Record(ChildRange(direction, childrenCount(child)), child);
 			if (path.value.length < stack.length)
 				path.put(curr_child_idx);
 			else
@@ -113,6 +131,8 @@ template Skorokhod(Reference, bool NoDebug = true)
 		private void pop()
 		{
 			enforce(!empty);
+			if (stack.length > 1)
+				stack[$-2].children.direction = stack[$-1].children.direction;
 			stack.popBack;
 		}
 
@@ -124,8 +144,14 @@ template Skorokhod(Reference, bool NoDebug = true)
 
 		private void nextSibling()
 		{
+			// get up from the current node
+			pop;
+			// if it was the last one the game is over
+			if (empty)
+				return;
+
 			// go to the next sibling
-			top.children.popFront;
+			top.children.next;
 
 			// counter of parents whose have visited all their children
 			size_t cnt = 0;
@@ -134,43 +160,39 @@ template Skorokhod(Reference, bool NoDebug = true)
 			// i.e. the tree has been fully traversed
 			bool fullyTraversed;
 
-			scope(success)
+			// in case of forward direction we check if we get the
+			// last node in the whole tree
+			// (in case of backward direction it is trivial -
+			// the tree is empty)
+			if (direction == Direction.forward)
 			{
-				// on successful exit we fix the current
-				// length of the path (remove excess elements)
-				if (!fullyTraversed)
+				if (top.children.empty)
 				{
-					while(path.value.length > stack.length)
-						path.popBack;
-				}
-			}
-
-			if (top.children.empty)
-			{
-				// if the current list is the last list of its parent
-				// then we count total number of other grand parents
-				cnt++;
-				while(cnt < stack.length && stack[$-cnt-1].children.nextEmpty)
-				{
+					// if the current list is the last list of its parent
+					// then we count total number of other grand parents
 					cnt++;
+					while(cnt < stack.length && stack[$-cnt-1].children.nextEmpty)
+					{
+						cnt++;
+					}
+
+					// if the current list is the last one of all grand parents
+					// set the flag
+					if (cnt == stack.length)
+						fullyTraversed = true;
 				}
 
-				// if the current list is the last one of all grand parents
-				// set the flag
-				if (cnt == stack.length)
-					fullyTraversed = true;
-			}
-
-			// if there is no next subling
-			while(top.children.empty)
-			{
-				// try to level up to the parent
-				pop;
-				// get out of here if there is no any parent
-				if (empty)
-					return;
-				// go to the next sibling
-				top.children.popFront;
+				// if there is no next subling
+				while(top.children.empty)
+				{
+					// try to level up to the parent
+					pop;
+					// get out of here if there is no any parent
+					if (empty)
+						goto fixpath;
+					// go to the next sibling
+					top.children.next;
+				}
 			}
 
 			assert(!empty);
@@ -179,6 +201,15 @@ template Skorokhod(Reference, bool NoDebug = true)
 			// make it the current node
 			if (!top.children.empty)
 				push;
+			
+			fixpath:
+			// on successful exit we fix the current
+			// length of the path (remove excess elements)
+			if (!fullyTraversed)
+			{
+				while(path.value.length > stack.length)
+					path.popBack;
+			}
 		}
 
 		private ref auto top() inout
@@ -191,6 +222,20 @@ template Skorokhod(Reference, bool NoDebug = true)
 			return stack.length;
 		}
 
+		void setForwardDirection()
+		{
+			direction = Direction.forward;
+			if (!empty)
+				top.children.direction = direction;
+		}
+
+		void setBackwardDirection()
+		{
+			direction = Direction.backward;
+			if (!empty)
+				top.children.direction = direction;
+		}
+
 		// skip the current level and levels below the current
 		void skip()
 		{
@@ -201,9 +246,7 @@ template Skorokhod(Reference, bool NoDebug = true)
 				return;
 			}
 
-			pop;
-			if (!empty)
-				nextSibling;
+			nextSibling;
 		}
 
 		// InputRange interface
@@ -223,7 +266,20 @@ template Skorokhod(Reference, bool NoDebug = true)
 				return Element(stack[$-1].reference, path);
 		}
 
-		void popFront() @trusted
+		void popFront()
+		{
+			final switch(direction)
+			{
+				case Direction.forward:
+					popFrontForward;
+					break;
+				case Direction.backward:
+					popFrontBackward;
+					break;
+			}
+		}
+
+		private void popFrontForward()
 		{
 			assert(!_inLastElement);
 
@@ -233,9 +289,21 @@ template Skorokhod(Reference, bool NoDebug = true)
 				return;
 			}
 
+			nextSibling;
+		}
+
+		private void popFrontBackward()
+		{
+			assert(!_inLastElement);
+
+			// if(isParent(front) && inProgress)
+			// {
+			// 	push;
+			// 	return;
+			// }
+
 			pop;
-			if (!empty)
-				nextSibling;
+			nextSibling;
 		}
 	}
 
