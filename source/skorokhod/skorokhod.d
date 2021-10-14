@@ -120,6 +120,7 @@ template Skorokhod(Reference, bool NoDebug = true)
 		private void push()
 		{
 			auto curr_child_idx = cast(int) top.children.front;
+			current.children.next;
 			auto child = cbi(front, curr_child_idx);
 			stack ~= Record(ChildRange(direction, childrenCount(child)), child);
 			if (path.value.length < stack.length)
@@ -217,6 +218,11 @@ template Skorokhod(Reference, bool NoDebug = true)
 			return stack[$-1];
 		}
 
+		private ref auto current() inout
+		{
+			return stack[$-1];
+		}
+
 		size_t nestingLevel() const
 		{
 			return stack.length;
@@ -281,15 +287,18 @@ template Skorokhod(Reference, bool NoDebug = true)
 
 		private void popFrontForward()
 		{
-			assert(!_inLastElement);
-
-			if(isParent(front) && inProgress)
+			assert(!empty);
+			while(true)
 			{
-				push;
-				return;
+				if (!current.children.empty)
+				{
+					push;
+					return;
+				}
+				pop;
+				if (empty)
+					return;
 			}
-
-			nextSibling;
 		}
 
 		private void popFrontBackward()
