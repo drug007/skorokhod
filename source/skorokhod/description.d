@@ -166,6 +166,11 @@ class Var : Node
 		return false;
 	}
 
+	bool forwardDirection() const
+	{
+		return true;
+	}
+
 	auto as(T)()
 	{
 		return cast(T) this;

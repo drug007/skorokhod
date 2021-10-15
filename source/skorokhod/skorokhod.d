@@ -108,7 +108,7 @@ template Skorokhod(Reference, bool NoDebug = true)
 
 		Record[] stack;
 		TreePath path;
-		Direction direction;
+		bool inverseDirection;
 		// true if we have reached 
 		// the last element of the tree
 		bool _inLastElement;
@@ -125,9 +125,8 @@ template Skorokhod(Reference, bool NoDebug = true)
 		{
 			stack = null;
 			path = TreePath();
-			direction = Direction.forward;
 
-			stack ~= Record(ChildRange(direction, childrenCount(reference)), reference);
+			stack ~= Record(ChildRange(direction(reference), childrenCount(reference)), reference);
 			path.put(0);
 		}
 
@@ -136,7 +135,7 @@ template Skorokhod(Reference, bool NoDebug = true)
 			auto curr_child_idx = cast(int) top.children.front;
 			current.children.next;
 			auto child = cbi(front, curr_child_idx);
-			stack ~= Record(ChildRange(direction, childrenCount(child)), child);
+			stack ~= Record(ChildRange(direction(child), childrenCount(child)), child);
 			if (path.value.length < stack.length)
 				path.put(curr_child_idx);
 			else
@@ -168,16 +167,12 @@ template Skorokhod(Reference, bool NoDebug = true)
 
 		void setForwardDirection()
 		{
-			direction = Direction.forward;
-			if (!empty)
-				top.children.direction = direction;
+			inverseDirection = false;
 		}
 
 		void setBackwardDirection()
 		{
-			direction = Direction.backward;
-			if (!empty)
-				top.children.direction = direction;
+			inverseDirection = true;
 		}
 
 		// skip the current level and levels below the current
@@ -213,15 +208,11 @@ template Skorokhod(Reference, bool NoDebug = true)
 
 		void popFront()
 		{
-			final switch(direction)
-			{
-				case Direction.forward:
-					popFrontForward;
-					break;
-				case Direction.backward:
-					popFrontBackward;
-					break;
-			}
+			if (inverseDirection)
+				popFrontBackward;
+			else
+				popFrontForward;
+				
 		}
 
 		private void popFrontForward()
@@ -369,6 +360,13 @@ template Skorokhod(Reference, bool NoDebug = true)
 		{
 			return Reference(&value);
 		}
+
+		// this type of reference has no explicit direction at all
+		// and by default it means forward direction
+		auto direction(Reference reference)
+		{
+			return Direction.forward;
+		}
 	}
 	else
 	{
@@ -423,6 +421,11 @@ template Skorokhod(Reference, bool NoDebug = true)
 		auto reference(Reference reference)
 		{
 			return reference;
+		}
+
+		auto direction(Reference reference)
+		{
+			return reference.forwardDirection ? Direction.forward : Direction.backward;
 		}
 	}
 
