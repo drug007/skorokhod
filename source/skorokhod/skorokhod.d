@@ -133,7 +133,6 @@ template Skorokhod(Reference, bool NoDebug = true)
 		private void push()
 		{
 			auto curr_child_idx = cast(int) top.children.front;
-			current.children.next;
 			auto child = cbi(front, curr_child_idx);
 			stack ~= Record(ChildRange(direction(child), childrenCount(child)), child);
 			if (path.value.length < stack.length)
@@ -233,6 +232,7 @@ template Skorokhod(Reference, bool NoDebug = true)
 				pop;
 				if (empty)
 					return;
+				current.children.next;
 			}
 		}
 
