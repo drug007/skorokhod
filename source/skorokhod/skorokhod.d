@@ -35,6 +35,20 @@ template Skorokhod(Reference, bool NoDebug = true)
 			}
 		}
 
+		private void skip()
+		{
+			// our interval is [1, end]
+			final switch(direction)
+			{
+				case Direction.forward:
+					begin = end + 1;
+				break;
+				case Direction.backward:
+					begin = 0;
+				break;
+			}
+		}
+
 		bool nextEmpty() const
 		{
 			return checkEmtpiness(begin + direction);
@@ -252,7 +266,8 @@ template Skorokhod(Reference, bool NoDebug = true)
 				return;
 			}
 
-			nextSibling;
+			top.children.skip;
+			popFront;
 		}
 
 		// InputRange interface
