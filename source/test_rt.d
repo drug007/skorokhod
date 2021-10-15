@@ -116,9 +116,13 @@ unittest
 	auto r = rangeOver(threeDesc);
 	version(none) r.map!toString.each!writeln;
 	assert(r.map!toPath.equal(path_etalon));
+	r = rangeOver(threeDesc);
 
 	foreach(_; 0..5)
 		r.popFront;
+
+	assert(r.front.name == "one");
+	assert(r.path.value[] == [0, 2]);
 
 	while(!r.empty)
 		r.popFront;
