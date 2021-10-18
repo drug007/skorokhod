@@ -131,6 +131,137 @@ unittest
 	assert(r.empty);
 }
 
+@("ForwardAndBack")
+unittest
+{
+	import std.algorithm : each, map;
+	import std.stdio : writeln;
+	import skorokhod.skorokhod;
+
+	mixin skorokhodHelperRT!(Var, false);
+
+	auto r = rangeOver(threeDesc);
+
+	foreach(_; 0..5)
+		r.popFront;
+
+	assert(r.front.name == "one");
+	assert(r.front.type.name == "OneT[3]");
+	assert(r.path.value[] == [0, 2]);
+
+	r.setBackwardDirection;
+	r.popFront;
+	assert(r.front.type.name == "ubyte");
+	assert(r.path.value[] == [0, 1, 1]);
+
+	r.popFront;
+	assert(r.front.type.name == "ubyte");
+	assert(r.path.value[] == [0, 1, 0]);
+
+	r.popFront;
+	assert(r.front.name == "ub");
+	assert(r.front.type.name == "ubyte[2]");
+	assert(r.path.value[] == [0, 1]);
+
+	r.setForwardDirection;
+	r.popFront;
+	assert(r.front.name == "");
+	assert(r.front.type.name == "ubyte");
+	assert(r.path.value[] == [0, 1, 0]);
+
+	r.setBackwardDirection;
+	r.popFront;
+	assert(r.front.name == "ub");
+	assert(r.front.type.name == "ubyte[2]");
+	assert(r.path.value[] == [0, 1]);
+
+	r.setForwardDirection;
+	r.popFront;
+	assert(r.front.name == "");
+	assert(r.front.type.name == "ubyte");
+	assert(r.path.value[] == [0, 1, 0]);
+
+	r.popFront;
+	assert(r.front.name == "");
+	assert(r.front.type.name == "ubyte");
+	assert(r.path.value[] == [0, 1, 1]);
+
+	r.popFront;
+	assert(r.front.name == "one");
+	assert(r.front.type.name == "OneT[3]");
+	assert(r.path.value[] == [0, 2]);
+
+	r.popFront;
+	assert(r.front.name == "");
+	assert(r.front.type.name == "OneT");
+	assert(r.path.value[] == [0, 2, 0]);
+
+	r.popFront;
+	assert(r.front.name == "str");
+	assert(r.front.type.name == "string");
+	assert(r.path.value[] == [0, 2, 0, 0]);
+
+	r.popFront;
+	assert(r.front.name == "i");
+	assert(r.front.type.name == "int");
+	assert(r.path.value[] == [0, 2, 0, 1]);
+
+	r.popFront;
+	assert(r.front.name == "");
+	assert(r.front.type.name == "OneT");
+	assert(r.path.value[] == [0, 2, 1]);
+
+	r.setBackwardDirection;
+	r.popFront;
+	assert(r.front.name == "i");
+	assert(r.front.type.name == "int");
+	assert(r.path.value[] == [0, 2, 0, 1]);
+
+	r.popFront;
+	assert(r.front.name == "str");
+	assert(r.front.type.name == "string");
+	assert(r.path.value[] == [0, 2, 0, 0]);
+
+	r.popFront;
+	assert(r.front.name == "");
+	assert(r.front.type.name == "OneT");
+	assert(r.path.value[] == [0, 2, 0]);
+
+	r.popFront;
+	assert(r.front.name == "one");
+	assert(r.front.type.name == "OneT[3]");
+	assert(r.path.value[] == [0, 2]);
+
+	r.popFront;
+	assert(r.front.name == "");
+	assert(r.front.type.name == "ubyte");
+	assert(r.path.value[] == [0, 1, 1]);
+
+	r.popFront;
+	assert(r.front.name == "");
+	assert(r.front.type.name == "ubyte");
+	assert(r.path.value[] == [0, 1, 0]);
+
+	r.popFront;
+	assert(r.front.name == "ub");
+	assert(r.front.type.name == "ubyte[2]");
+	assert(r.path.value[] == [0, 1]);
+
+	r.popFront;
+	assert(r.front.name == "sh");
+	assert(r.front.type.name == "short");
+	assert(r.path.value[] == [0, 0]);
+
+	r.popFront;
+	assert(r.front.name == "three");
+	assert(r.front.type.name == "Three");
+	assert(r.path.value[] == [0]);
+
+	r.popFront;
+	assert(r.empty);
+	assert(r.path.value[] == []);
+}
+
 @("rt_skip")
 unittest
 {

@@ -14,19 +14,42 @@ template Skorokhod(Reference, bool NoDebug = true)
 
 		@disable this();
 
-		this(Direction d, size_t count)
+		this(Direction d, size_t count, bool inverseDirection)
 		{
 			direction = d;
+			if (!count)
+			{
+				begin = 1;
+				end = 0;
+				return;
+			}
 			// the first index in case of forward direction and
 			// the last one in other case
 			begin = (direction == Direction.forward) ? 1 : count;
+			// if end equals to zero it means that the node is a leaf one
 			end = count;
+			// inverse front and back if needed
+			if (inverseDirection)
+				begin = (begin == 1) ? end : 1;
 		}
 
-		private bool checkEmtpiness(size_t value) const
+		// calculate new direction considering the current one and
+		// necessity of its inversion
+		auto calcDirection(bool inverseDirection) const
 		{
+			if (inverseDirection)
+				return (direction == Direction.forward) ? Direction.backward : Direction.forward;
+			return direction;
+		}
+
+		bool checkEmtpiness(size_t value, bool inverseDirection = false) const
+		{
+			// leaf node is always empty
+			if (!end)
+				return true;
 			// our interval is [1, end]
-			final switch(direction)
+			Direction d = calcDirection(inverseDirection);
+			final switch(d)
 			{
 				case Direction.forward:
 					return value > end;
@@ -35,10 +58,11 @@ template Skorokhod(Reference, bool NoDebug = true)
 			}
 		}
 
-		private void skip()
+		void skip(bool inverseDirection = false)
 		{
 			// our interval is [1, end]
-			final switch(direction)
+			Direction d = calcDirection(inverseDirection);
+			final switch(d)
 			{
 				case Direction.forward:
 					begin = end + 1;
@@ -49,25 +73,32 @@ template Skorokhod(Reference, bool NoDebug = true)
 			}
 		}
 
-		bool nextEmpty() const
+		bool nextEmpty(bool inverseDirection = false) const
 		{
-			return checkEmtpiness(begin + direction);
+			return checkEmtpiness(begin + direction, inverseDirection);
 		}
 
-		bool empty() const
+		bool empty(bool inverseDirection = false) const
 		{
-			return checkEmtpiness(begin);
+			return checkEmtpiness(begin, inverseDirection);
 		}
 
-		size_t front() const
+		size_t front(bool inverseDirection)
 		{
+			if (begin == 0)
+			{
+				if (!end)
+					return 1;
+				begin = calcDirection(inverseDirection) == Direction.forward ?  1 : end;
+			}
+			assert(begin > 0 && (!end || begin <= end));
 			return begin-1;
 		}
 
-		void next()
+		void next(bool inverseDirection = false)
 		{
-			assert(!empty);
-			begin += direction;
+			assert(!empty(inverseDirection));
+			begin += calcDirection(inverseDirection);
 		}
 	}
 
@@ -126,15 +157,17 @@ template Skorokhod(Reference, bool NoDebug = true)
 			stack = null;
 			path = TreePath();
 
-			stack ~= Record(ChildRange(direction(reference), childrenCount(reference)), reference);
+			stack ~= Record(ChildRange(direction(reference), childrenCount(reference), inverseDirection), reference);
 			path.put(0);
 		}
 
 		private void push()
 		{
-			auto curr_child_idx = cast(int) top.children.front;
+			auto curr_child_idx = cast(int) top.children.front(inverseDirection);
 			auto child = cbi(front, curr_child_idx);
-			stack ~= Record(ChildRange(direction(child), childrenCount(child)), child);
+			stack ~= Record(ChildRange(direction(child), childrenCount(child), inverseDirection), child);
+
+			// process path
 			if (path.value.length < stack.length)
 				path.put(curr_child_idx);
 			else
@@ -150,11 +183,6 @@ template Skorokhod(Reference, bool NoDebug = true)
 		}
 
 		private ref auto top() inout
-		{
-			return stack[$-1];
-		}
-
-		private ref auto current() inout
 		{
 			return stack[$-1];
 		}
@@ -224,7 +252,7 @@ template Skorokhod(Reference, bool NoDebug = true)
 			}
 			while(true)
 			{
-				if (!current.children.empty)
+				if (!top.children.empty)
 				{
 					push;
 					return;
@@ -232,22 +260,47 @@ template Skorokhod(Reference, bool NoDebug = true)
 				pop;
 				if (empty)
 					return;
-				current.children.next;
+				top.children.next;
 			}
 		}
 
 		private void popFrontBackward()
 		{
-			assert(!_inLastElement);
+			assert(!empty);
+			
+			scope(exit)
+			{
+				while(stack.length && path.value.length > stack.length)
+					path.popBack;
+			}
+			// edge case if only root is available
+			if (stack.length == 1)
+			{
+				pop;
+				path.value.popBack;
+				return;
+			}
 
-			// if(isParent(front) && inProgress)
-			// {
-			// 	push;
-			// 	return;
-			// }
-
+			// level up to the parent
 			pop;
-			nextSibling;
+			// select next child of the parent
+			top.children.next(inverseDirection);
+			// if there is no more child stay in the parent
+			if (top.children.empty(inverseDirection))
+				return;
+			// go down to the selected child of the parent
+			push;
+			// go down to the deepest and lastest child
+			while(true)
+			{
+				// select the last child of the current parent
+				top.children.begin = top.children.end;
+				// stop if there is no more children available
+				if (top.children.empty(inverseDirection))
+					return;
+				// go to the selected child
+				push;
+			}
 		}
 	}
 
@@ -425,6 +478,7 @@ template Skorokhod(Reference, bool NoDebug = true)
 
 		auto direction(Reference reference)
 		{
+			assert(reference);
 			return reference.forwardDirection ? Direction.forward : Direction.backward;
 		}
 	}
