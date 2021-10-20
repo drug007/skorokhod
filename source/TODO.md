@@ -1,5 +1,5 @@
 [x] Skip + twin iteration
-[ ] Test for skip + twin iteration
+[x] Test for skip + twin iteration
 [x] Skipping of root children
 [x] Add direction
 [x] Fix empty method

@@ -16,8 +16,12 @@ unittest
 	mixin skorokhodHelperRT!Var;
 	mixin skorokhodHelperCT!(Three);
 
-	Three three;
-	three.two ~= Two();
+	auto three = Three(
+		1, 
+		[2, 3], 
+		[One("4", 5), One("6", 7), One("8", 9)],
+		[Two(10, One("11", 12), "13", 14)]
+	);
 	auto ctr = rangeOver(three);
 	auto rtr = rangeOver(threeDesc);
 
@@ -27,10 +31,24 @@ unittest
 	threeDesc.field("two").as!ArrayVar.elements[0].as!AggregateVar.field("one").as!AggregateVar.collapsed = true;
 
 	{
-		import std.algorithm : each, map;
+		import std.algorithm : each, equal, map;
+		import std.typecons : tuple;
 		import std.stdio : writeln;
 		import std.conv : text;
 
-		skipper(rtr, ctr).map!(t=>text(toString(t[0]), "  ",  *t[1])).each!writeln;
+		skipper(rtr, ctr).map!(t=>text(toString(t[0]), "  ",  *t[1])).equal([
+			"three  Three(1, [2, 3], [One(\"4\", 5), One(\"6\", 7), One(\"8\", 9)], [Two(10, One(\"11\", 12), \"13\", 14)])",
+			"sh  1",
+			"ub  [2, 3]",
+			"ubyte  2",
+			"ubyte  3",
+			"one  [One(\"4\", 5), One(\"6\", 7), One(\"8\", 9)]",
+			"two  [Two(10, One(\"11\", 12), \"13\", 14)]",
+			"TwoT  Two(10, One(\"11\", 12), \"13\", 14)",
+			"f  10",
+			"one  One(\"11\", 12)",
+			"str  13",
+			"d  14",
+		]);
 	}
 }
