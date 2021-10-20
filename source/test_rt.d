@@ -262,6 +262,29 @@ unittest
 	assert(r.path.value[] == []);
 }
 
+@("Forth&Back")
+unittest
+{
+	import skorokhod.skorokhod;
+
+	mixin skorokhodHelperRT!(Var, false);
+
+	auto r = rangeOver(threeDesc);
+
+	auto rw = RandomWalker(150, 23);
+	rw.makeUnpredictable;
+
+	foreach(e; rw)
+	{
+		assert(r.front.path.value[] == path_etalon[e[0]]);
+		if (e[1] == 1)
+			r.setForwardDirection;
+		else
+			r.setBackwardDirection;
+		r.popFront;
+	}
+}
+
 @("rt_skip")
 unittest
 {
