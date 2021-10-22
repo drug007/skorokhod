@@ -140,9 +140,6 @@ template Skorokhod(Reference, bool NoDebug = true)
 		Record[] stack;
 		TreePath path;
 		bool inverseDirection;
-		// true if we have reached 
-		// the last element of the tree
-		bool _inLastElement;
 
 		@disable this();
 		@disable this(this);
@@ -220,7 +217,7 @@ template Skorokhod(Reference, bool NoDebug = true)
 
 		bool empty() const
 		{
-			return _inLastElement || stack.length == 0;
+			return stack.length == 0;
 		}
 
 		auto front()
