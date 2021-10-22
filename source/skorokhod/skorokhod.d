@@ -242,6 +242,9 @@ template Skorokhod(Reference, bool NoDebug = true)
 				
 		}
 
+		private enum TraversalState { descent, next, }
+		private TraversalState _traversal_state;
+
 		private void popFrontForward()
 		{
 			assert(!empty);
@@ -250,17 +253,24 @@ template Skorokhod(Reference, bool NoDebug = true)
 				while(stack.length && path.value.length > stack.length)
 					path.popBack;
 			}
-			while(true)
+
+			while(true) final switch(_traversal_state)
 			{
-				if (!top.children.empty)
-				{
-					push;
-					return;
-				}
-				pop;
-				if (empty)
-					return;
-				top.children.next;
+				case TraversalState.descent:
+					if (!top.children.empty)
+					{
+						push;
+						return;
+					}
+					pop;
+					if (empty)
+						return;
+					_traversal_state = TraversalState.next;
+				break;
+				case TraversalState.next:
+					top.children.next;
+					_traversal_state = TraversalState.descent;
+				break;
 			}
 		}
 
