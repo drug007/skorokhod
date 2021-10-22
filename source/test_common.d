@@ -37,7 +37,7 @@ bool equal(S, E)(S sample, E etalon)
 
 		if (sample.front != etalon[0])
 		{
-			stderr.writeln(i, ": ", sample.front, "\n", i, ": ", etalon.front);
+			stderr.writeln(i, ": ", sample.front[], "\n", i, ": ", etalon.front[]);
 			return false;
 		}
 		sample.popFront;

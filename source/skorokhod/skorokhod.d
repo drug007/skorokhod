@@ -239,8 +239,11 @@ template Skorokhod(Reference, bool NoDebug = true)
 				
 		}
 
-		private enum TraversalState { descent, next, }
+		private enum TraversalState { descent, ascent, next, }
 		private TraversalState _traversal_state;
+		private bool _returnFlag;
+
+		auto returnFlag() const { return _returnFlag; }
 
 		private void popFrontForward()
 		{
@@ -251,18 +254,32 @@ template Skorokhod(Reference, bool NoDebug = true)
 					path.popBack;
 			}
 
-			while(true) final switch(_traversal_state)
+			while(!empty) final switch(_traversal_state)
 			{
 				case TraversalState.descent:
 					if (!top.children.empty)
 					{
 						push;
+						// designates that the current node is visited
+						// first time before visiting any of its children
+						_returnFlag = false;
 						return;
 					}
+					_traversal_state = TraversalState.ascent;
+					if (top.children.end != 0)
+					{
+						// designates that the current node is visited
+						// once again after visiting all of its children
+						_returnFlag = true;
+						return;
+					}
+				break;
+				case TraversalState.ascent:
 					pop;
 					if (empty)
 						return;
-					_traversal_state = TraversalState.next;
+					if (!top.children.empty)
+						_traversal_state = TraversalState.next;
 				break;
 				case TraversalState.next:
 					top.children.next;
